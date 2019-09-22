@@ -13,6 +13,7 @@
 void Init_mysql();
 int MYSQL_regist(PACK);
 int MYSQL_login(PACK);
+void MYSQL_exit(PACK);
 int MYSQL_deal_addfd(PACK);
 int MYSQL_addfd(PACK);
 void MYSQL_delfd(PACK);

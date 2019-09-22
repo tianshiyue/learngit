@@ -196,6 +196,7 @@ void deal_exit(PACK pack)
         p = p->next;
         ptemp = ptemp->next;
     }
+    MYSQL_exit(pack);
     printf("客户端%s退出成功\n", pack.username);
 }
 

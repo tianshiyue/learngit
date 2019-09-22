@@ -81,12 +81,14 @@ int  MYSQL_login(PACK pack )
 {
     accept_mysql();
     int flag = -1;
+    char buff[200];
     mysql_query(&mysql, "select *from user");
     result = mysql_store_result(&mysql);
     if (result) {
         while((row = mysql_fetch_row(result))) {
             if ((strcmp(row[0], pack.username) == 0) && (strcmp(row[1], pack.password) == 0)) {
-                mysql_query(&mysql, "update user set online = 1" );
+                sprintf(buff, "update user set online = 1 where username = '%s'", pack.username);
+                mysql_query(&mysql, buff);
                 flag = 0;
                 break;
             }
@@ -110,6 +112,13 @@ int MYSQL_deal_addfd(PACK pack)
         }
     }
     return flag;
+}
+
+void MYSQL_exit(PACK pack)
+{
+    char buff[200];
+    sprintf(buff, "update user set online = 0 where username = '%s'", pack.username);
+    mysql_query(&mysql, buff);
 }
 
 int  MYSQL_addfd(PACK pack)
