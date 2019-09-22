@@ -13,8 +13,10 @@
 void Init_mysql();
 int MYSQL_regist(PACK);
 int MYSQL_login(PACK);
+int MYSQL_deal_addfd(PACK);
 int MYSQL_addfd(PACK);
 void MYSQL_delfd(PACK);
+int MYSQL_deal_chat_fd(PACK);
 void MYSQL_chat_fd(PACK);
 FD_list MYSQL_fd_list(PACK,FD_list);
 FD_chat MYSQL_fd_chatstore(PACK, FD_chat);

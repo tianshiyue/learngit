@@ -138,6 +138,9 @@ int client_delfd(int client_fd)
     strcpy(pack.username, name);
     printf("\t\t请输入您需要删除好友的用户名:");
     scanf("%s", pack.send_username);
+    if(strcmp(name, pack.send_username) == 0) {
+        printf("\t\t对不起，自己不能删除自己\n");
+    }
     if(send(client_fd, &pack, sizeof(PACK), 0) < 0) {
         perror("client_delfd:Send\n");
     }
@@ -155,6 +158,16 @@ int client_fd_list(int client_fd)
     return INITB;
 }
 
+int client_online_fd_list(int client_fd)
+{
+    PACK pack;
+    strcpy(pack.username, name);
+    if(send(client_fd, &pack, sizeof(PACK), 0) < 0) {
+        perror("client_online_fd_list:send\n");
+    }
+    return INITB;
+}
+
 
 int client_chat_fd(int client_fd)
 {
@@ -165,13 +178,19 @@ int client_chat_fd(int client_fd)
     strcpy(pack.username, name);
     printf("\t\t请输入您需要聊天的好友用户名:");
     scanf("%s", pack.send_username);
+    if(strcmp(name, pack.send_username) == 0) {
+        printf("\t\t对不起，自己不能和自己聊天\n");
+        return INITB;
+    }
     while(t != 0) {
         printf("\t\t请输入您需要聊天的内容:");
         scanf("%s", pack.mess);
         t = strcmp("bye", pack.mess);
-        int ret = send(client_fd, &pack, sizeof(PACK), 0);
-        if(ret < 0) {
-            perror("client_chat_fd:send\n");
+        if(t != 0) {
+            int ret = send(client_fd, &pack, sizeof(PACK), 0);
+            if(ret < 0) {
+                perror("client_chat_fd:send\n");
+            }
         }
     }
     return INITB;
@@ -238,16 +257,17 @@ int client_chat_gp(int client_fd)
     PACK pack;
     strcpy(pack.username, name);
     pack.type = CHAT_GP;
-    printf("\t\t请输入您想要群聊的群名:");
-    scanf("%s", pack.send_username);
     int t = 1;
     while(t != 0) {
         printf("\t\t请输入您想要聊天的内容:");
         scanf("%s", pack.mess);
         t = strcmp("bye", pack.mess);
-        int ret = send(client_fd, &pack, sizeof(PACK), 0);
-        if(ret < 0) {
-            perror("client_chat_gp:send\n");
+        if(t != 0) {
+            printf("7&&&&&&&&&7\n");
+            int ret = send(client_fd, &pack, sizeof(PACK), 0);
+            if(ret < 0) {
+                perror("client_chat_gp:send\n");
+            }
         }
     }
     return INITB;
@@ -359,6 +379,7 @@ int use_menu(int client_fd)
 	printf("\t\t|      12、群聊天记录        |\n");
 	printf("\t\t|      13、发送文件          |\n");
 	printf("\t\t|      14、好友申请          |\n");
+	printf("\t\t|      15、在线好友列表      |\n");
 	printf("\t\t|      0、退出               |\n");
 	printf("\t\t|****************************|\n");
 	printf("\t\t请输入您要进行的操作:");
@@ -393,6 +414,8 @@ int use_menu(int client_fd)
             return SEND_FILE;
         case 14:
             return MESS_RECV_ADDFD;
+        case 15:
+            return ONLINE_FD_LIST;
         case 0:
             return EXITB;
         default :
@@ -453,6 +476,9 @@ void use_menuoi(int client_fd)
                 break;
             case SEND_FILE:
                 status = client_send_file(client_fd);
+                break;
+            case ONLINE_FD_LIST:
+                status = client_online_fd_list(client_fd);
                 break;
             case EXITB:
                 break;
@@ -533,6 +559,8 @@ void print_gp_list(PACK);
 void print_gp_user_list(PACK);
 void print_gp_chatstore(PACK);
 void recv_file(PACK);
+void recv_deal_addfd(PACK);
+void recv_deal_chat_fd(PACK);
 
 void *recv_PACK(void *client_fd)
 {
@@ -583,6 +611,12 @@ void *recv_PACK(void *client_fd)
                 break;
             case RECV_FILE:
                 recv_file(pack);
+                break;
+            case DEAL_ADDFD:
+                recv_deal_addfd(pack);
+                break;
+            case DEAL_CHAT_FD:
+                recv_deal_chat_fd(pack);
                 break;
         }
     }
@@ -658,6 +692,14 @@ void agree_addfd(PACK pack)
     }
 }
 
+void recv_deal_addfd(PACK pack) 
+{
+    printf("\n");
+    if(strcmp("fail", pack.mess) == 0) {
+        printf("\t\t您和该用户以是好友或该用户不存在\n");
+    }
+}
+
 void print_fd_list(PACK pack)
 {
     int t = strcmp("bye", pack.send_username);
@@ -667,6 +709,17 @@ void print_fd_list(PACK pack)
     }
 }
 
+
+void recv_deal_chat_fd(PACK pack)
+{
+    printf("\n");
+    if(strcmp("fail", pack.mess) == 0) {
+        printf("\t\t您与该用户并不是好友或者该用户不存在，发送失败\n");
+    }
+    /*printf("请输入bye退出:");
+    char buff[5];
+    scanf("%s", buff);*/
+}
 
 void print_chat_fd(PACK pack) 
 {

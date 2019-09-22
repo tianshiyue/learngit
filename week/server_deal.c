@@ -36,6 +36,7 @@ void deal_gp_list(PACK);
 void deal_gp_user_list(PACK);
 void deal_gp_chat_store(PACK);
 void deal_send_file(PACK);
+void deal_online_fd_list(PACK);
 
 static int cli_fd;
 
@@ -107,6 +108,9 @@ void deal_pack(PACK pack, int cli_fd)
             break;
         case SEND_FILE:
             deal_send_file(pack);
+            break;
+        case ONLINE_FD_LIST:
+            deal_online_fd_list(pack);
             break;
     }
 }
@@ -197,7 +201,7 @@ void deal_exit(PACK pack)
 
 void deal_addfd(PACK pack)
 {
-    PACK send_pack;
+    PACK send_pack, send_pack1;
     printf("pack.username = %s\n", pack.username);
     printf("pack.send_username = %s\n", pack.send_username);
     strcpy(send_pack.send_username, pack.send_username);
@@ -209,12 +213,24 @@ void deal_addfd(PACK pack)
             send_pack.fd = ptemp->fd;
             printf("send_pack.fd = %d\n", send_pack.fd);
             strcpy(send_pack.username, pack.username);
-            break;
+            //break;
+        }
+        if(strcmp(ptemp->name, pack.username) == 0) {
+            send_pack1.fd = ptemp->fd;
+            //break;
         }
         ptemp = ptemp->next;
     }
-    printf("send_pack.send_username = %s\n", send_pack.send_username);
-    send_other_PACK(send_pack);
+    int t = MYSQL_deal_addfd(pack);
+    if(t == 0) {
+        send_other_PACK(send_pack);
+    } 
+    if(t == -1) {
+        send_pack1.type = DEAL_ADDFD;
+        strcpy(send_pack1.mess, "fail");
+        send_other_PACK(send_pack1);
+    }
+    //printf("send_pack.send_username = %s\n", send_pack.send_username);
 }
 
 void deal_recv_addfd(PACK pack)
@@ -278,11 +294,14 @@ void deal_fd_list(PACK pack)
     memset(&fd_list, 0, sizeof(FD_list));
 }
 
-
+void deal_online_fd_list(PACK pack)
+{
+    
+}
 
 void deal_chat_fd(PACK pack)
 {
-    PACK send_pack;
+    PACK send_pack, send_pack1;
     strcpy(send_pack.username, pack.username);
     strcpy(send_pack.send_username, pack.send_username);
     strcpy(send_pack.mess, pack.mess);
@@ -292,12 +311,27 @@ void deal_chat_fd(PACK pack)
     while(ptemp != NULL) {
         if(strcmp(ptemp->name, pack.send_username) == 0) {
             send_pack.fd = ptemp->fd;
-            break;
+           // break;
+        }
+        if(strcmp(ptemp->name, pack.username) == 0) {
+            send_pack1.fd = ptemp->fd;
+            //break;
         }
         ptemp = ptemp->next;
     }
-    MYSQL_chat_fd(send_pack);
-    send_other_PACK(send_pack);
+
+    int t = MYSQL_deal_chat_fd(pack);
+    if(t == 0) {
+        send_other_PACK(send_pack);
+        send_other_PACK(send_pack);
+    }
+    if(t == -1) { 
+        send_pack1.type = DEAL_CHAT_FD;
+        strcpy(send_pack1.mess, "fail");
+        send_other_PACK(send_pack1);
+    }
+    //MYSQL_chat_fd(send_pack);
+    //send_other_PACK(send_pack);
 }
 
 void deal_fd_chatstore(PACK pack)

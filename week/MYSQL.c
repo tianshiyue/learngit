@@ -95,6 +95,23 @@ int  MYSQL_login(PACK pack )
     return flag;
 }
 
+int MYSQL_deal_addfd(PACK pack)
+{
+    accept_mysql();
+    int flag = 0;
+    mysql_query(&mysql, "select *from friends");
+    result = mysql_store_result(&mysql);
+    if(result) {
+        while(row = mysql_fetch_row(result)) {
+            if((strcmp(pack.username, row[0]) == 0 && strcmp(pack.send_username, row[1]) == 0) || (strcmp(pack.send_username, row[0]) == 0 && strcmp(pack.username, row[1]) == 0)) {
+                flag = -1;
+                return flag;
+            }
+        }
+    }
+    return flag;
+}
+
 int  MYSQL_addfd(PACK pack)
 {
     accept_mysql();
@@ -120,6 +137,23 @@ void MYSQL_delfd(PACK pack)
     char buff[200];
     sprintf(buff,"delete from friends where (username1 = '%s' and username2 = '%s') or (username1 ='%s' and username2 = '%s')", pack.username, pack.send_username, pack.send_username, pack.username);
     mysql_query(&mysql, buff);
+}
+
+int MYSQL_deal_chat_fd(PACK pack)
+{
+    accept_mysql();
+    int flag = -1;
+    mysql_query(&mysql, "select *from friends");
+    result = mysql_store_result(&mysql);
+    if(result) {
+        while(row = mysql_fetch_row(result)) {
+            if((strcmp(pack.username, row[0]) == 0 && strcmp(pack.send_username, row[1]) == 0) && (strcmp(pack.send_username, row[0]) == 0 && strcmp(pack.username, row[1]) != 0)) {
+                flag = 0;
+                return flag;
+            }
+        }
+    }
+    return flag;
 }
 
 void MYSQL_chat_fd(PACK pack)
