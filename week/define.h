@@ -35,6 +35,8 @@
 #define GP_CHATSTORE 23
 #define ONLINE_FD_LIST 24
 #define UNTALK_GP    25
+#define DEAL_UNTALK_GP 26
+#define INVITE_USER 27
 
 #define RECV_ADDFD 1001
 #define AGREE_ADDFD 1002
@@ -56,6 +58,9 @@
 
 #define RECV_UNTALK_GP 1017
 #define FAIL_CHAT_GP   1018
+#define RECV_DEAL_UNTALK_GP 1019
+#define RECV_INVITE_USER 1020
+#define IS_INVITE_USER   1021
 
 typedef struct PACK {
     char username[USERNAME_LEN];

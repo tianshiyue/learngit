@@ -346,6 +346,9 @@ chat_GP MYSQL_chat_gp(PACK pack, chat_GP chat_gp)
     memset(&chat_gp, 0, sizeof(chat_GP));
     if(result) {
         while(row = mysql_fetch_row(result)) {
+            if(strcmp(row[1], pack.username) == 0 && atoi(row[2]) == -1) {
+                break;
+            }
             if(strcmp(row[0], pack.send_username) == 0) {
                 printf("chat_gp.send_username[%d] = %s\n", i,  row[1]);
                 strcpy(chat_gp.send_username[i], row[1]);
@@ -426,11 +429,11 @@ int MYSQL_untalk_gp(PACK pack)
 {
     accept_mysql();
     int flag = -1;
-    mysql_query(&mysql, "select *from groups");
+    mysql_query(&mysql, "select *from group_member");
     result = mysql_store_result(&mysql);
     if(result) {
         while(row = mysql_fetch_row(result)) {
-            if(strcmp(row[0], pack.username) == 0 && strcmp(row[1], pack.mess) == 0) {
+            if(strcmp(row[0], pack.mess) == 0 && strcmp(row[1], pack.send_username) == 0 && atoi(row[2]) == 0) {
                 flag = 0;
                 return flag;
             }
@@ -449,7 +452,7 @@ void MYSQL_deal_untalk_gp(PACK pack)
         printf("pack.send_username = %s\n", pack.send_username);
         while(row = mysql_fetch_row(result)) {
             printf("row[1] = %s\n", row[1]);
-            if(strcmp(row[1], pack.send_username) == 0 && strcmp(pack.mess, row[0]) == 0) {
+            if(strcmp(row[1], pack.send_username) == 0) {
                 printf("^^^^^^^^^^^^^\n");
                 sprintf(buff, "update group_member set flag = -1 where group_user = '%s' and group_name = '%s'", pack.send_username, pack.mess);
                 printf("%s\n", buff);
@@ -457,4 +460,55 @@ void MYSQL_deal_untalk_gp(PACK pack)
             }
         }
     }
+}
+
+int MYSQL_untalk1_gp(PACK pack)
+{
+    accept_mysql();
+    int flag = -1;
+    mysql_query(&mysql, "select *from group_member");
+    result = mysql_store_result(&mysql);
+    if(result) {
+        while(row = mysql_fetch_row(result)) {
+            if(strcmp(row[0], pack.mess) == 0 && strcmp(row[1], pack.send_username) == 0 && atoi(row[2]) == -1) {
+                flag = 0;
+                return flag;
+            }
+        }
+    }
+    return flag;
+}
+
+void MYSQL_deal1_untalk_gp(PACK pack)
+{
+    accept_mysql();
+    char buff[200]; 
+    sprintf(buff, "update group_member set flag = 0 where group_user = '%s' and group_name = '%s'", pack.send_username, pack.mess);
+    mysql_query(&mysql, buff);
+}
+
+int MYSQL_deal_invite_user(PACK pack)
+{
+    accept_mysql();
+    int flag = 0;
+    mysql_query(&mysql, "select *from group_member");
+    result = mysql_store_result(&mysql);
+    if(result) {
+        while(row = mysql_fetch_row(result)) {
+            if(strcmp(row[0], pack.mess) != 0 || strcmp(row[1], pack.username) != 0 || strcmp(row[1], pack.send_username) == 0) {
+                flag = -1;
+                return flag;
+            }
+        }
+    }
+    return flag;
+}
+
+void MYSQL_invite_user_isok(PACK pack)
+{
+    accept_mysql();
+    char buff[200];
+    sprintf(buff, "insert into group_member (group_name, group_user, flag) values ('%s', '%s', 0)", pack.mess, pack.send_username);
+    printf("%s\n", buff);
+    mysql_query(&mysql, buff);
 }

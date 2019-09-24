@@ -1,0 +1,954 @@
+<p>/<strong><em>*</em><em>*</em><em>*</em><em>*</em><em>*</em><em>*</em><em>*</em><em>*</em><em>*</em><em>*</em><em>*</em><em>*</em><em>*</em><em>*</em><em>*</em><em>*</em><em>*</em><em>*</em><em>*</em><em>*</em><em>*</em><em>*</em><em>*</em></strong></p>
+
+<blockquote>
+  <p>File Name: client_menu.c
+Author: 
+Mail: 
+Created Time: 2019年09月08日 星期日 21时10分21秒
+ <strong><em>*</em><em>*</em><em>*</em><em>*</em><em>*</em><em>*</em><em>*</em><em>*</em><em>*</em><em>*</em><em>*</em><em>*</em><em>*</em><em>*</em><em>*</em><em>*</em><em>*</em><em>*</em><em>*</em><em>*</em><em>*</em><em>*</em>**</strong>/</p>
+
+<h1>include "define.h"</h1>
+</blockquote>
+
+<h1>include <stdio.h></h1>
+
+<h1>include <time.h></h1>
+
+<h1>include <sys/types.h></h1>
+
+<h1>include <sys/socket.h></h1>
+
+<h1>include <pthread.h></h1>
+
+<h1>include <string.h></h1>
+
+<h1>include <stdlib.h></h1>
+
+<h1>include <unistd.h></h1>
+
+<h1>include <termios.h></h1>
+
+<h1>include <sys/stat.h></h1>
+
+<h1>include <fcntl.h></h1>
+
+<p>void *recv_PACK(void *);</p>
+
+<p>void clear<em>input</em>buffer()
+{
+    while (getchar() != '\n')
+        ;
+}</p>
+
+<p>// int client<em>fd;
+char name[USERNAME</em>LEN];</p>
+
+<p>// 注册
+int  client<em>regist (int client</em>fd)
+{
+    PACK pack;
+    pack.type = REGIST;
+    printf("\t\t请输入用户名:");
+    scanf("%s", pack.username);
+    printf("\t\t请输入密码:");
+    scanf("%s", pack.password);
+    int ret = send(client<em>fd, &amp;pack, sizeof(PACK), 0 );
+    if (ret &lt; 0) {
+        perror("client</em>regist:send\n");
+    }
+    while(1) {
+        memset(&amp;pack, 0, sizeof(PACK));
+        ret = recv(client<em>fd, &amp;pack, sizeof(PACK), 0);
+        if (ret &lt; 0) {
+            perror("regist</em>recv\n");
+        }
+        else {
+            if (pack.type == 0) {
+                printf("\t\t%s注册成功\n", pack.username);
+            }
+            if (pack.type == -1) {
+                printf("\t\t用户名已存在 注册失败:\n");
+            }
+        }
+        return INITA;
+    }
+}</p>
+
+<p>void *recv<em>pack(void *);
+void use</em>menuoi(int);</p>
+
+<p>// 登录
+int  client<em>login(int client</em>fd)
+{
+    PACK pack;
+    pack.type = LOGIN;
+    pthread<em>t recv</em>msg;
+    printf("\t\t请输入用户名:");
+    scanf("%s", pack.username);
+    strcpy(name, pack.username);
+    printf("\t\t请输入密码:");
+    scanf("%s", pack.password);
+    int ret = send(client<em>fd, &amp;pack, sizeof(PACK), 0 );
+    if (ret &lt; 0){
+        perror("client</em>login:send\n");
+    }
+    while(1) {
+        memset(&amp;pack, 0, sizeof(PACK));
+        ret = recv(client<em>fd, &amp;pack, sizeof(PACK), 0);
+        if (ret &lt; 0){
+            perror("login</em>recv\n");
+        }
+        else {
+            if (pack.type == 0) {
+                printf("\t\t%s登录成功\n", pack.username);
+                pthread<em>create(&amp;recv</em>msg, NULL, recv<em>PACK, &amp;client</em>fd);
+                use<em>menuoi(client</em>fd);
+                return INITA;
+            }
+            if (pack.type == -1) {
+                printf("\t\t用户名不存在或密码错误 登录失败:\n");
+                return INITA;
+            }
+        }
+    }
+}</p>
+
+<p>int client<em>exit(int client</em>fd)
+{
+    PACK pack;
+    strcpy(pack.username, name);
+    pack.type = EXITB;
+    if(send(client<em>fd, &amp;pack, sizeof(PACK),0)&lt;0) {
+        perror("client</em>exit\n");
+    }
+    return INITA;
+}</p>
+
+<p>// 加好友
+int client<em>addfd(int client</em>fd)
+{
+    PACK pack;
+    memset(&amp;pack, 0, sizeof(PACK));
+    // 将自己的用户名写进包里
+    strcpy(pack.username, name);
+    pack.type = ADD<em>FD;
+    printf("\t\t请输入您需要添加的用户名:");
+    scanf("%s", pack.send</em>username);;
+    if(strcmp(pack.username, pack.send<em>username) == 0) {
+        printf("\t\t对不起 自己不能添加自己为好友!\n");
+    } else {
+        if(send(client</em>fd, &amp;pack, sizeof(PACK), 0) &lt; 0) {
+            perror("client_addfd:send\n");
+        }
+    }
+    return  INITB;
+}</p>
+
+<p>int client<em>delfd(int client</em>fd)
+{
+    PACK pack;
+    pack.type = DEL<em>FD;
+    strcpy(pack.username, name);
+    printf("\t\t请输入您需要删除好友的用户名:");
+    scanf("%s", pack.send</em>username);
+    if(strcmp(name, pack.send<em>username) == 0) {
+        printf("\t\t对不起，自己不能删除自己\n");
+    }
+    if(send(client</em>fd, &amp;pack, sizeof(PACK), 0) &lt; 0) {
+        perror("client_delfd:Send\n");
+    }
+    return INITB;
+}</p>
+
+<p>int client<em>fd</em>list(int client<em>fd) 
+{
+    PACK pack;
+    strcpy(pack.username, name);
+    pack.type = FD</em>LIST;
+    if(send(client<em>fd, &amp;pack, sizeof(PACK), 0) &lt; 0) {
+        perror("client</em>fd_list:error\n");
+    }
+    return INITB;
+}</p>
+
+<p>int client<em>online</em>fd<em>list(int client</em>fd)
+{
+    PACK pack;
+    pack.type = ONLINE<em>FD</em>LIST;
+    strcpy(pack.username, name);
+    if(send(client<em>fd, &amp;pack, sizeof(PACK), 0) &lt; 0) {
+        perror("client</em>online<em>fd</em>list:send\n");
+    }
+    return INITB;
+}</p>
+
+<p>int client<em>chat</em>fd(int client<em>fd)
+{
+    int t = 1;
+    PACK pack;
+    memset(&amp;pack, 0, sizeof(PACK));
+    pack.type = CHAT</em>FD;
+    strcpy(pack.username, name);
+    printf("\t\t请输入您需要聊天的好友用户名:");
+    scanf("%s", pack.send<em>username);
+    if(strcmp(name, pack.send</em>username) == 0) {
+        printf("\t\t对不起，自己不能和自己聊天\n");
+        return INITB;
+    }
+    while(t != 0) {
+        printf("\t\t请输入您需要聊天的内容:");
+        scanf("%s", pack.mess);
+        t = strcmp("bye", pack.mess);
+        if(t != 0) {
+            int ret = send(client<em>fd, &amp;pack, sizeof(PACK), 0);
+            if(ret &lt; 0) {
+                perror("client</em>chat_fd:send\n");
+            }
+        }
+    }
+    return INITB;
+}</p>
+
+<p>int client<em>creat</em>gp(int client<em>fd)
+{
+    PACK pack;
+    printf("\t\t请输入您创建的群名:");
+    scanf("%s", pack.send</em>username);
+    strcpy(pack.username, name);
+    pack.type = CREAT<em>GP;
+    int ret = send(client</em>fd, &amp;pack, sizeof(PACK), 0);
+    if(ret &lt; 0) {
+        perror("client<em>creat</em>gp:send\n");
+    }
+    return INITB;
+}</p>
+
+<p>int client<em>fd</em>chatstore(int client<em>fd)
+{
+    PACK pack;
+    pack.type = FD</em>CHATSTORE;
+    strcpy(pack.username, name);
+    printf("\t\t请输入您要查看的好友用户名:");
+    scanf("%s", pack.send<em>username);
+    int ret = send(client</em>fd, &amp;pack, sizeof(PACK), 0);
+    if(ret &lt; 0) {
+        perror("client<em>fd</em>chatstore:send\n");
+    }
+    return INITB;
+}</p>
+
+<p>int client<em>join</em>gp(int client<em>fd)
+{
+    PACK pack;
+    strcpy(pack.username, name);
+    printf("\t\t请输入您想加入的群名:");
+    scanf("%s", pack.send</em>username);
+    pack.type = JOIN<em>GP;
+    int ret = send(client</em>fd, &amp;pack, sizeof(PACK), 0);
+    if(ret &lt; 0) {
+        perror("client<em>join</em>gp:send\n");
+    }
+    return INITB;
+}</p>
+
+<p>int client<em>quit</em>gp(int client<em>fd)
+{
+    PACK pack;
+    strcpy(pack.username, name);
+    printf("\t\t请输入您想要退出的群名:");
+    scanf("%s", pack.send</em>username);
+    pack.type = QUIT<em>GP;
+    int ret = send(client</em>fd, &amp;pack, sizeof(PACK), 0);
+    if(ret &lt; 0) {
+        perror("client<em>quit</em>gp:send\n");
+    }
+    return INITB;
+}</p>
+
+<p>int client<em>chat</em>gp(int client<em>fd)
+{
+    PACK pack;
+    strcpy(pack.username, name);
+    pack.type = CHAT</em>GP;
+    printf("\t\t请输入您要群聊的群名:");
+    scanf("%s", pack.send<em>username);
+    int t = 1;
+    while(t != 0) {
+        printf("\t\t请输入您想要聊天的内容:");
+        scanf("%s", pack.mess);
+        t = strcmp("bye", pack.mess);
+        if(t != 0) {
+            int ret = send(client</em>fd, &amp;pack, sizeof(PACK), 0);
+            if(ret &lt; 0) {
+                perror("client<em>chat</em>gp:send\n");
+            }
+        }
+    }
+    return INITB;
+}</p>
+
+<p>int client<em>gp</em>list(int client<em>fd)
+{
+    PACK pack;
+    pack.type = GP</em>LIST;
+    strcpy(pack.username, name);
+    int ret = send(client<em>fd, &amp;pack, sizeof(PACK), 0);
+    if(ret &lt; 0) {
+        perror("client</em>gp_list:send\n");
+    }
+    return INITB;
+}</p>
+
+<p>int client<em>gp</em>user<em>list(int client</em>fd)
+{
+    PACK pack;
+    pack.type = GP<em>USER</em>LIST;
+    strcpy(pack.username, name);
+    printf("\t\t请输入您想要查看的群名:");
+    scanf("%s", pack.send<em>username);
+    int ret = send(client</em>fd, &amp;pack, sizeof(PACK), 0);
+    if(ret &lt; 0) {
+        perror("client<em>gp</em>user_list:send\n");
+    }
+    return INITB;
+}</p>
+
+<p>int client<em>untalk</em>gp(int client<em>fd)
+{
+    PACK pack;
+    strcpy(pack.username, name);
+    pack.type = UNTALK</em>GP;
+    printf("\t\t请输入您要禁言的群名:");
+    scanf("%s", pack.mess);
+    printf("\t\t请输入您要禁言的用户:");
+    scanf("%s", pack.send<em>username);
+    int ret = send(client</em>fd, &amp;pack, sizeof(PACK), 0);
+    if(ret &lt; 0) {
+        perror("client<em>untalk</em>gp:send\n");
+    }
+    return INITB;
+}</p>
+
+<p>int client<em>deal</em>untalk<em>gp(int client</em>fd) 
+{
+    PACK pack;
+    pack.type = DEAL<em>UNTALK</em>GP;
+    strcpy(pack.username, name);
+    printf("\t\t请输入您要解除禁言的群聊:");
+    scanf("%s", pack.mess);
+    printf("\t\t请输入您要解除禁言的用户名:");
+    scanf("%s", pack.send<em>username);
+    int ret = send(client</em>fd, &amp;pack, sizeof(PACK), 0);
+    if(ret &lt; 0) {
+        perror("client<em>deal</em>untalk_gp:send\n");
+    }
+    return INITB;
+}</p>
+
+<p>int client<em>deal</em>invite<em>user(int client</em>fd)
+{
+    PACK pack;
+    pack.type = INVITE<em>USER;
+    strcpy(pack.username, name);
+    printf("\t\t请输入您想要邀请的群名:");
+    scanf("%s", pack.mess);
+    printf("\t\t请输入您想要邀请的用户名:");
+    scanf("%s", pack.send</em>username);
+    printf("pack.send<em>username = %s\n", pack.send</em>username);
+    int ret = send(client<em>fd, &amp;pack, sizeof(PACK), 0);
+    if(ret &lt; 0) {
+        perror("client</em>deal<em>invite</em>user:send\n");
+    }
+    return INITB;
+}</p>
+
+<p>int client<em>send</em>file(int client<em>fd)
+{
+    PACK pack;
+    pack.type = SEND</em>FILE;
+    strcpy(pack.username, name);
+    printf("\t\t请输入您要发送的好友用户名:");
+    scanf("%s", pack.send<em>username);
+    char send</em>username[USERNAME<em>LEN];
+    strcpy(send</em>username, pack.send<em>username);
+    printf("\t\t请输入您所要发送文件的绝对路径:");
+    char path[100];
+    // buf结构体
+    struct stat buf;
+    int fd;
+    int ret;
+    scanf("%s", path);
+    // lstat获取文件的一些信息
+    if(lstat(path, &amp;buf) == -1) {
+        printf("\t\t输入的文件路径错误\n");
+        return INITB;
+    }
+    // st</em>mode 文件的类型和权限
+    if(S<em>ISDIR(buf.st</em>mode)) {
+        printf("\t\t您输入的是一个目录\n");
+        return INITB;
+    }
+    if((fd = open(path, O<em>RDONLY)) == -1) {
+        perror("client</em>send<em>file:open\n");
+        return INITB;
+    }
+    // read返回每次读取到的字节数
+    while((ret = read(fd, pack.mess, sizeof(pack.mess)) &lt; 0)) {
+        if((send(client</em>fd, &amp;pack, sizeof(PACK), 0)) &lt; 0) {
+            perror("client<em>send</em>file:send\n");
+        }
+        memset(&amp;pack, 0, sizeof(PACK));
+        pack.type = SEND<em>FILE;
+        strcpy(pack.username, name);
+        strcpy(pack.send</em>username, send_username);
+    }
+    close(fd);
+    return INITB;
+}</p>
+
+<p>int client<em>gp</em>chatstore(int client<em>fd)
+{
+    PACK pack;
+    strcpy(pack.username, name);
+    pack.type = GP</em>CHATSTORE;
+    printf("\t\t请输入您想要查看的群名:");
+    scanf("%s", pack.send<em>username);
+    int ret = send(client</em>fd, &amp;pack, sizeof(PACK), 0);
+    if(ret &lt; 0) {
+        perror("client<em>gp</em>chatstore:send\n");
+    }
+    return INITB;
+}</p>
+
+<p>int use<em>menu(int client</em>fd)
+{
+    time<em>t Time = time(NULL);
+    char *buf = ctime(&amp;Time);
+    printf("\t\t%s", buf);
+    printf("\t\t|<strong>************************</strong>|\n");
+    printf("\t\t|           主菜单           |\n");
+    printf("\t\t|<strong>************************</strong>|\n");
+    printf("\t\t|      1、添加好友           |\n");
+    printf("\t\t|      2、删除好友           |\n");
+    printf("\t\t|      3、好友聊天           |\n");
+    printf("\t\t|      4、好友列表           |\n");
+    printf("\t\t|      5、聊天记录           |\n");
+    printf("\t\t|      6、创建群聊           |\n");
+    printf("\t\t|      7、加入群聊           |\n");
+    printf("\t\t|      8、退出群聊           |\n");
+    printf("\t\t|      9、群聊天             |\n");
+    printf("\t\t|      10、群列表            |\n");
+    printf("\t\t|      11、查看群成员        |\n");
+    printf("\t\t|      12、群聊天记录        |\n");
+    printf("\t\t|      13、发送文件          |\n");
+    printf("\t\t|      14、好友申请          |\n");
+    printf("\t\t|      15、在线好友列表      |\n");
+    printf("\t\t|      16、禁言              |\n");
+    printf("\t\t|      17、解除禁言          |\n");
+    printf("\t\t|      18、邀请进群          |\n");
+    printf("\t\t|      0、退出               |\n");
+    printf("\t\t|<strong>************************</strong>|\n");
+    printf("\t\t请输入您要进行的操作:");
+    int choice;
+    scanf("%d", &amp;choice);
+    switch (choice) {
+        case 1:
+            return ADD</em>FD;
+        case 2:
+            return DEL<em>FD;
+        case 3:
+            return CHAT</em>FD;
+        case 4:
+            return FD<em>LIST;
+        case 5:
+            return FD</em>CHATSTORE;
+        case 6:
+            return CREAT<em>GP;
+        case 7:
+            return JOIN</em>GP;
+        case 8:
+            return QUIT<em>GP;
+        case 9:
+            return CHAT</em>GP;
+        case 10:
+            return GP<em>LIST;
+        case 11:
+            return GP</em>USER<em>LIST;
+        case 12:
+            return GP</em>CHATSTORE;
+        case 13:
+            return SEND<em>FILE;
+        case 14:
+            return MESS</em>RECV<em>ADDFD;
+        case 15:
+            return ONLINE</em>FD<em>LIST;
+        case 16:
+            return UNTALK</em>GP;
+        case 17:
+            return DEAL<em>UNTALK</em>GP;
+        case 18:
+            return INVITE_USER;
+        case 0:
+            return EXITB;
+        default :
+            printf("\t\t输入错误\n");
+            break;
+    }
+    return INITB;
+}</p>
+
+<p>int client<em>mess</em>recv_addfd(int);</p>
+
+<p>void use<em>menuoi(int client</em>fd)
+{
+    int  status = INITB;
+    while (status != EXITB) {
+        switch (status) {
+            case INITB:
+                status = use<em>menu(client</em>fd);
+                break;
+            case ADD<em>FD:
+                status = client</em>addfd(client<em>fd);
+                break;
+            case DEL</em>FD:
+                status = client<em>delfd(client</em>fd);
+                break;
+            case FD<em>LIST:
+                status = client</em>fd<em>list(client</em>fd);
+                break;
+            case FD<em>CHATSTORE:
+                status = client</em>fd<em>chatstore(client</em>fd);
+                break;
+            case MESS<em>RECV</em>ADDFD:
+                status = client<em>mess</em>recv<em>addfd(client</em>fd);
+                break;
+            case CHAT<em>FD:
+                status = client</em>chat<em>fd(client</em>fd);
+                break;
+            case CREAT<em>GP:
+                status = client</em>creat<em>gp(client</em>fd);
+                break;
+            case JOIN<em>GP:
+                status = client</em>join<em>gp(client</em>fd);
+                break;
+            case QUIT<em>GP:
+                status = client</em>quit<em>gp(client</em>fd);
+                break;
+            case CHAT<em>GP:
+                status = client</em>chat<em>gp(client</em>fd);
+                break;
+            case GP<em>LIST:
+                status = client</em>gp<em>list(client</em>fd);
+                break;
+            case GP<em>USER</em>LIST:
+                status = client<em>gp</em>user<em>list(client</em>fd);
+                break;
+            case GP<em>CHATSTORE:
+                status = client</em>gp<em>chatstore(client</em>fd);
+                break;
+            case SEND<em>FILE:
+                status = client</em>send<em>file(client</em>fd);
+                break;
+            case ONLINE<em>FD</em>LIST:
+                status = client<em>online</em>fd<em>list(client</em>fd);
+                break;
+            case UNTALK<em>GP:
+                status = client</em>untalk<em>gp(client</em>fd);
+                break;
+            case DEAL<em>UNTALK</em>GP:
+                status = client<em>deal</em>untalk<em>gp(client</em>fd);
+                break;
+            case INVITE<em>USER:
+                status = client</em>deal<em>invite</em>user(client<em>fd);
+                break;
+            case EXITB:
+                break;
+            default:
+                printf("status unknown: %d", status); <br />
+        }
+        clear</em>input<em>buffer();
+    }
+    if(status == EXITB) {
+        status = client</em>exit(client_fd);
+    }
+}</p>
+
+<p>int  login<em>menu(int client</em>fd)
+{
+    time_t Time = time(NULL);
+    char <em>buf = ctime(&amp;Time);
+    printf("\t\t%s", buf);
+    printf("\t\t|<strong></em><em>*</em><em>*</em><em>*</em><em>*</em><em>*</em><em>*</em><em>*</em><em>*</strong>|\n");
+    printf("\t\t|          欢迎使用          |\n");
+    printf("\t\t|<strong></em><em>*</em><em>*</em><em>*</em><em>*</em><em>*</em><em>*</em><em>*</em><em>*</strong>|\n");
+    printf("\t\t|       1、用户注册          |\n");
+    printf("\t\t|       2、用户登录          |\n");
+    printf("\t\t|       0、退出              |\n");
+    printf("\t\t|<strong></em><em>*</em><em>*</em><em>*</em><em>*</em><em>*</em><em>*</em><em>*</em>**</strong>|\n");
+    printf("\t\t请输入您要进行的操作:");
+    int choice;
+    scanf("%d", &amp;choice);
+    switch (choice) {
+        case 1:
+            return REGIST;
+        case 2:
+            return LOGIN;
+        case 0:
+            return EXITA;
+        default:
+            printf("\t\t输入错误\n");
+            break;
+    }
+    return INITA;
+}</p>
+
+<p>void login<em>menuoi(int client</em>fd)
+{
+    int  status = INITA;
+    pthread<em>t recv</em>msg;
+    while (status != EXITA) {
+        switch (status) {
+            case INITA:
+                status = login<em>menu(client</em>fd);
+                break;
+            case REGIST:
+                status = client<em>regist(client</em>fd);
+                break;;
+            case LOGIN:
+                status = client<em>login(client</em>fd);
+                break;
+            case EXITA:
+                break;
+            default:
+                printf("status unknown: %d", status);
+        }
+        clear<em>input</em>buffer();
+    }
+}</p>
+
+<p>void client<em>recv</em>addfd(PACK);
+void agree<em>addfd(PACK);
+void print</em>fd<em>list(PACK);
+void print</em>chat<em>fd(PACK);
+void print</em>fd<em>chatstore(PACK);
+void print</em>creat<em>gp(PACK);
+void print</em>join<em>gp(PACK);
+void print</em>quit<em>gp(PACK);
+void print</em>chat<em>gp(PACK);
+void print</em>gp<em>list(PACK);
+void print</em>gp<em>user</em>list(PACK);
+void print<em>gp</em>chatstore(PACK);
+void recv<em>file(PACK);
+void recv</em>deal<em>addfd(PACK);
+void recv</em>deal<em>chat</em>fd(PACK);
+void deal<em>online</em>fd<em>list(PACK);
+void deal</em>untalk<em>gp(PACK);
+void deal</em>fail<em>chat</em>gp(PACK);
+void deal1<em>untalk</em>gp(PACK);
+void deal<em>invite</em>user(PACK);</p>
+
+<p>void *recv<em>PACK(void *client</em>fd)
+{
+    int fd = *(int *)client<em>fd;
+    PACK pack;
+    while (1) {
+        memset(&amp;pack, 0, sizeof(PACK));
+        int ret;
+        if((ret = recv(fd, &amp;pack, sizeof(PACK), MSG</em>WAITALL)) &lt; 0) {
+            perror("client<em>recv</em>pack:\n");
+        }
+        switch(pack.type) {
+            case RECV<em>ADDFD:
+                client</em>recv<em>addfd(pack);
+                break;
+            case AGREE</em>ADDFD:
+                agree<em>addfd(pack);
+                break;
+            case RECV</em>FD<em>LIST:
+                printf("您的好友列表为:\n");
+                print</em>fd<em>list(pack);
+                break;
+            case RECV</em>CHAT<em>FD:
+                print</em>chat<em>fd(pack);
+                break;
+            case RECV</em>FD<em>CHATSTORE:
+                print</em>fd<em>chatstore(pack);
+                break;
+            case RECV</em>CREAT<em>GP:
+                print</em>creat<em>gp(pack);
+                break;
+            case RECV</em>JOIN<em>GP:
+                print</em>join<em>gp(pack);
+                break;
+            case RECV</em>QUIT<em>GP:
+                print</em>quit<em>gp(pack);
+                break;
+            case RECV</em>CHAT<em>GP:
+                print</em>chat<em>gp(pack);
+                break;
+            case RECV</em>GP<em>LIST:
+                printf("您的群列表为:\n");
+                print</em>gp<em>list(pack);
+                break;
+            case RECV</em>GP<em>USER</em>LIST:
+                printf("\n");
+                printf("群%s的成员有:\n", pack.username);
+                print<em>gp</em>user<em>list(pack);
+                break;
+            case RECV</em>GP<em>CHATSTORE:
+                print</em>gp<em>chatstore(pack);
+                break;
+            case RECV</em>FILE:
+                recv<em>file(pack);
+                break;
+            case DEAL</em>ADDFD:
+                recv<em>deal</em>addfd(pack);
+                break;
+            case DEAL<em>CHAT</em>FD:
+                recv<em>deal</em>chat<em>fd(pack);
+                break;
+            case RECV</em>ONLINE<em>FD</em>LIST:
+                printf("您的在线好友列表为:\n");
+                deal<em>online</em>fd<em>list(pack);
+                break;
+            case RECV</em>UNTALK<em>GP:
+                deal</em>untalk<em>gp(pack);
+                break;
+            case FAIL</em>CHAT<em>GP:
+                deal</em>fail<em>chat</em>gp(pack);
+                break;
+            case RECV<em>DEAL</em>UNTALK<em>GP:
+                deal1</em>untalk<em>gp(pack);
+                break;
+            case RECV</em>INVITE<em>USER:
+                deal</em>invite_user(pack);
+                break;
+        }
+    }
+}</p>
+
+<p>typedef struct recv<em>addfd {
+    char name[USERNAME</em>LEN];
+    struct recv<em>addfd *next;
+} recv</em>addfd;</p>
+
+<p>recv_addfd *phead = NULL, *pend;</p>
+
+<p>void client<em>recv</em>addfd(PACK pack) 
+{
+    if(phead == NULL) {
+        phead = (struct recv<em>addfd *)malloc(sizeof(struct recv</em>addfd));
+        phead->next = NULL;
+        pend = phead;
+    }
+    recv<em>addfd *ptemp;
+    ptemp = (struct recv</em>addfd *)malloc(sizeof(struct recv_addfd));
+    strcpy(ptemp->name, pack.username);
+    ptemp->next = NULL;
+    pend->next = ptemp;
+    pend = ptemp;
+    printf("\n");
+    printf("\t\t您有一条好友申请 请及时前往好友申请消息盒子查看\n");
+}</p>
+
+<p>int  client<em>mess</em>recv<em>addfd(int client</em>fd)
+{
+    PACK pack;
+    if(phead == NULL) {
+        printf("\t\t您没有好友申请\n");
+    } else {
+        recv<em>addfd *p1, *p2;
+        p1 = phead;
+        while(p1->next != NULL) {
+            p2 = p1->next;
+            printf("\t\t%s 请求加您为好友:同意请按1 拒绝请按0\n", p2->name);
+            int t;
+            scanf("%d", &amp;t);
+            memset(&amp;pack, 0, sizeof(PACK));
+            pack.type = MESS</em>RECV<em>ADDFD;
+            strcpy(pack.username, name);
+            strcpy(pack.send</em>username, p2->name);
+            if(t == 1) {
+                strcpy(pack.mess, "success");
+                if((send(client<em>fd, &amp;pack, sizeof(PACK), 0)) &lt; 0) {
+                    perror("client</em>mess<em>recv</em>addfd:send\n");
+                }
+            } else {
+                strcpy(pack.mess, "fail");
+                if((send(client<em>fd, &amp;pack, sizeof(PACK), 0)) &lt; 0) {
+                    perror("client</em>mess<em>recv</em>addfd:send\n");
+                }
+            }
+            p1->next = p2->next;
+            free(p2);
+        }
+        free(p1);
+        phead = NULL;
+    }
+    return INITB;
+}</p>
+
+<p>void agree_addfd(PACK pack) 
+{
+    if(strcmp(pack.mess, "success") == 0) {
+        printf("\t\t%s已同意您的好友请求\n", pack.username);
+    } else {
+        printf("\t\t%s已拒绝您的好友请求\n", pack.username);
+    }
+}</p>
+
+<p>void recv<em>deal</em>addfd(PACK pack) 
+{
+    printf("\n");
+    if(strcmp("fail", pack.mess) == 0) {
+        printf("\t\t您和该用户以是好友或该用户不存在\n");
+    }
+}</p>
+
+<p>void print<em>fd</em>list(PACK pack)
+{
+    int t = strcmp("bye", pack.send<em>username);
+    if(t != 0) {
+        printf("\t%s\n", pack.send</em>username);
+    }
+}</p>
+
+<p>void deal<em>online</em>fd<em>list(PACK pack)
+{
+    int t = strcmp("bye", pack.send</em>username);
+    if(t != 0) {
+        printf("\t%s\n", pack.send_username);
+    }
+}</p>
+
+<p>void recv<em>deal</em>chat_fd(PACK pack)
+{
+    printf("\n");
+    if(strcmp("fail", pack.mess) == 0) {
+        printf("\t\t您与该用户并不是好友或者该用户不存在，发送失败\n");
+    }
+}</p>
+
+<p>void print<em>chat</em>fd(PACK pack) 
+{
+    printf("\n");
+    printf("\t\t%s给您发来了一条消息:%s\n", pack.username, pack.mess);
+}</p>
+
+<p>void print<em>fd</em>chatstore(PACK pack)
+{
+    printf("\n");
+    printf("\t\t发送人:%s  接收人:%s  信息:%s\n", pack.username, pack.send_username, pack.mess);
+}</p>
+
+<p>void print<em>creat</em>gp(PACK pack)
+{
+   // printf("pack.send<em>username = %s\n", pack.send</em>username);
+    //printf("pack.send<em>mess = %s\n", pack.mess);
+    printf("\n");
+    if(strcmp("success", pack.mess) == 0) {
+        printf("\t\t群%s创建成功\n", pack.send</em>username);
+    } else {
+        printf("\t\t群名重复 群%s创建失败\n", pack.send_username);
+    }
+}</p>
+
+<p>void print<em>join</em>gp(PACK pack)
+{
+    printf("\n");
+    if(strcmp("success", pack.mess) == 0) {
+        printf("\t\t群%s加入成功\n", pack.send<em>username);
+    } 
+    if(strcmp("fail", pack.mess) == 0) {
+        printf("\t\t群%s不存在 加入失败", pack.send</em>username);
+    }
+}</p>
+
+<p>void print<em>quit</em>gp(PACK pack)
+{
+    printf("\n");
+    if(strcmp("success", pack.mess) == 0) {
+        printf("\t\t群%s退出成功\n", pack.send<em>username);
+    } else {
+        printf("\t\t群%s不存在或者您并不在该群 退出失败\n", pack.send</em>username);
+    }
+}</p>
+
+<p>void print<em>chat</em>gp(PACK pack)
+{
+    printf("\n");
+    printf("\t\t群%s中的用户%s发来了一条群消息:%s\n", pack.send<em>username, pack.username, pack.mess);
+}
+void deal</em>fail<em>chat</em>gp(PACK pack)
+{
+    printf("\n");
+    if(strcmp("fail", pack.mess) == 0) {
+        printf("\t\t您已被群主禁言,对该群成员将不显示您的信息，请输入bye退出\n");
+    }
+}</p>
+
+<p>void print<em>gp</em>list(PACK pack)
+{
+    printf("\n");
+    int t = strcmp(pack.send<em>username, "bye");
+    if(t != 0) {
+        printf("\t%s\n", pack.send</em>username);
+    }
+}</p>
+
+<p>void print<em>gp</em>user<em>list(PACK pack)
+{
+    printf("\n");
+    int t = strcmp(pack.send</em>username, "bye");
+    if(t != 0) {
+        printf("\t   %s\n", pack.send_username);
+    }
+}</p>
+
+<p>void print<em>gp</em>chatstore(PACK pack)
+{
+    printf("\n");
+    printf("发件人:%s   信息:%s\n", pack.username, pack.mess);
+}</p>
+
+<p>void recv<em>file(PACK pack)
+{
+    PACK send</em>pack;
+    int fd;
+    if((fd = open("recv<em>test", O</em>RDWR|O<em>CREAT|O</em>APPEND, S<em>IRUSR| S</em>IWUSR)) == -1) {
+        perror("recv<em>file:open\n");
+    }
+    int ret;
+    if( (ret = write(fd, pack.mess, sizeof(pack.mess))) &lt; 0) {
+        perror("recv</em>file:write\n");
+    }
+    close(fd);
+}</p>
+
+<p>void deal<em>untalk</em>gp(PACK pack)
+{
+    printf("\n");
+    if(strcmp("no", pack.password) == 0) {
+        printf("\t\t您没有权限或者该群或该成员不存在，禁言失败\n");
+    }
+    if(strcmp("yes", pack.password) == 0) {
+        printf("\t\t禁言成功\n");
+    }
+}</p>
+
+<p>void deal1<em>untalk</em>gp(PACK pack)
+{
+    printf("\n");
+    if(strcmp("no", pack.password) == 0) {
+        printf("\t\t您没有权限或者该群或该成员不存在，解除禁言失败\n");
+    }
+    if(strcmp("yes", pack.password) == 0) {
+        printf("\t\t解除禁言成功\n");
+    }
+}</p>
+
+<p>void deal<em>invite</em>user(PACK pack)
+{
+    printf("\n");
+    printf("\t\t%s已邀请您加入%s群\n", pack.username, pack.mess);
+}</p>

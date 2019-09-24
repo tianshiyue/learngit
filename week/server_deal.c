@@ -38,6 +38,8 @@ void deal_gp_chat_store(PACK);
 void deal_send_file(PACK);
 void deal_online_fd_list(PACK);
 void deal_untalk_gp(PACK);
+void deal1_untalk_gp(PACK);
+void deal_invite_user(PACK);
 
 static int cli_fd;
 
@@ -115,6 +117,12 @@ void deal_pack(PACK pack, int cli_fd)
             break;
         case UNTALK_GP:
             deal_untalk_gp(pack);
+            break;
+        case DEAL_UNTALK_GP:
+            deal1_untalk_gp(pack);
+            break;
+        case INVITE_USER:
+            deal_invite_user(pack);
             break;
     }
 }
@@ -466,6 +474,7 @@ void deal_chat_gp(PACK pack)
                 send_other_PACK(pack1);
                 return;
             }
+            ptemp = ptemp->next;
         }
     }
     chat_GP chat_gp;
@@ -588,6 +597,61 @@ void deal_untalk_gp(PACK pack)
         strcpy(pack.password, "yes");
         MYSQL_deal_untalk_gp(pack);
         send_other_PACK(pack);
+    }
+}
+
+void deal1_untalk_gp(PACK pack)
+{
+    pack.type = RECV_DEAL_UNTALK_GP;
+     find_fd *ptemp;
+    ptemp = phead->next;
+    while(ptemp != NULL) {
+        if(strcmp(pack.username, ptemp->name) == 0) {
+            pack.fd = ptemp->fd;
+            break;
+        }
+        ptemp = ptemp->next;
+    }
+    int flag = MYSQL_untalk1_gp(pack);
+    if(flag == -1) {
+        strcpy(pack.password, "no");
+        send_other_PACK(pack);
+    }
+    if(flag == 0) {
+        strcpy(pack.password, "yes");
+        MYSQL_deal1_untalk_gp(pack);
+        send_other_PACK(pack);
+    }
+}
+
+void deal_invite_user(PACK pack) 
+{
+    PACK send_pack,send_pack1;
+    send_pack.type = RECV_INVITE_USER;
+    send_pack1.type = IS_INVITE_USER;
+    find_fd *ptemp;
+    ptemp = phead->next;
+    while(ptemp != NULL) {
+        if(strcmp(ptemp->name, pack.send_username) ==0 ) {
+            send_pack.fd = ptemp->fd;
+            strcpy(send_pack.username, pack.username);
+            strcpy(send_pack.mess, pack.mess);
+        }
+        if(strcmp(ptemp->name, pack.username) == 0) {
+            send_pack1.fd = ptemp->fd;
+        }
+        ptemp = ptemp->next;
+    }
+    int flag = MYSQL_deal_invite_user(pack);
+    if(flag == 0) {
+        send_other_PACK(send_pack);
+        MYSQL_invite_user_isok(pack);
+        strcpy(send_pack1.password, "success");
+        send_other_PACK(send_pack1);
+    }
+    if(flag == -1) {
+        strcpy(send_pack1.password, "fail");
+        send_other_PACK(send_pack1);
     }
 }
 
