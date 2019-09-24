@@ -161,6 +161,7 @@ int client_fd_list(int client_fd)
 int client_online_fd_list(int client_fd)
 {
     PACK pack;
+    pack.type = ONLINE_FD_LIST;
     strcpy(pack.username, name);
     if(send(client_fd, &pack, sizeof(PACK), 0) < 0) {
         perror("client_online_fd_list:send\n");
@@ -257,13 +258,14 @@ int client_chat_gp(int client_fd)
     PACK pack;
     strcpy(pack.username, name);
     pack.type = CHAT_GP;
+    printf("\t\t请输入您要群聊的群名:");
+    scanf("%s", pack.send_username);
     int t = 1;
     while(t != 0) {
         printf("\t\t请输入您想要聊天的内容:");
         scanf("%s", pack.mess);
         t = strcmp("bye", pack.mess);
         if(t != 0) {
-            printf("7&&&&&&&&&7\n");
             int ret = send(client_fd, &pack, sizeof(PACK), 0);
             if(ret < 0) {
                 perror("client_chat_gp:send\n");
@@ -295,6 +297,22 @@ int client_gp_user_list(int client_fd)
     int ret = send(client_fd, &pack, sizeof(PACK), 0);
     if(ret < 0) {
         perror("client_gp_user_list:send\n");
+    }
+    return INITB;
+}
+
+int client_untalk_gp(int client_fd)
+{
+    PACK pack;
+    strcpy(pack.username, name);
+    pack.type = UNTALK_GP;
+    printf("\t\t请输入您要禁言的群名:");
+    scanf("%s", pack.mess);
+    printf("\t\t请输入您要禁言的用户:");
+    scanf("%s", pack.send_username);
+    int ret = send(client_fd, &pack, sizeof(PACK), 0);
+    if(ret < 0) {
+        perror("client_untalk_gp:send\n");
     }
     return INITB;
 }
@@ -380,6 +398,7 @@ int use_menu(int client_fd)
 	printf("\t\t|      13、发送文件          |\n");
 	printf("\t\t|      14、好友申请          |\n");
 	printf("\t\t|      15、在线好友列表      |\n");
+	printf("\t\t|      16、群禁言            |\n");
 	printf("\t\t|      0、退出               |\n");
 	printf("\t\t|****************************|\n");
 	printf("\t\t请输入您要进行的操作:");
@@ -416,6 +435,8 @@ int use_menu(int client_fd)
             return MESS_RECV_ADDFD;
         case 15:
             return ONLINE_FD_LIST;
+        case 16:
+            return UNTALK_GP;
         case 0:
             return EXITB;
         default :
@@ -479,6 +500,9 @@ void use_menuoi(int client_fd)
                 break;
             case ONLINE_FD_LIST:
                 status = client_online_fd_list(client_fd);
+                break;
+            case UNTALK_GP:
+                status = client_untalk_gp(client_fd);
                 break;
             case EXITB:
                 break;
@@ -561,6 +585,9 @@ void print_gp_chatstore(PACK);
 void recv_file(PACK);
 void recv_deal_addfd(PACK);
 void recv_deal_chat_fd(PACK);
+void deal_online_fd_list(PACK);
+void deal_untalk_gp(PACK);
+void deal_fail_chat_gp(PACK);
 
 void *recv_PACK(void *client_fd)
 {
@@ -580,6 +607,7 @@ void *recv_PACK(void *client_fd)
                 agree_addfd(pack);
                 break;
             case RECV_FD_LIST:
+                printf("您的好友列表为:\n");
                 print_fd_list(pack);
                 break;
             case RECV_CHAT_FD:
@@ -601,9 +629,12 @@ void *recv_PACK(void *client_fd)
                 print_chat_gp(pack);
                 break;
             case RECV_GP_LIST:
+                printf("您的群列表为:\n");
                 print_gp_list(pack);
                 break;
             case RECV_GP_USER_LIST:
+                printf("\n");
+                printf("群%s的成员有:\n", pack.username);
                 print_gp_user_list(pack);
                 break;
             case RECV_GP_CHATSTORE:
@@ -617,6 +648,16 @@ void *recv_PACK(void *client_fd)
                 break;
             case DEAL_CHAT_FD:
                 recv_deal_chat_fd(pack);
+                break;
+            case RECV_ONLINE_FD_LIST:
+                printf("您的在线好友列表为:\n");
+                deal_online_fd_list(pack);
+                break;
+            case RECV_UNTALK_GP:
+                deal_untalk_gp(pack);
+                break;
+            case FAIL_CHAT_GP:
+                deal_fail_chat_gp(pack);
                 break;
         }
     }
@@ -703,12 +744,18 @@ void recv_deal_addfd(PACK pack)
 void print_fd_list(PACK pack)
 {
     int t = strcmp("bye", pack.send_username);
-    //printf("您的好友列表为:\n");
     if(t != 0) {
         printf("\t%s\n", pack.send_username);
     }
 }
 
+void deal_online_fd_list(PACK pack)
+{
+    int t = strcmp("bye", pack.send_username);
+    if(t != 0) {
+        printf("\t%s\n", pack.send_username);
+    }
+}
 
 void recv_deal_chat_fd(PACK pack)
 {
@@ -716,9 +763,6 @@ void recv_deal_chat_fd(PACK pack)
     if(strcmp("fail", pack.mess) == 0) {
         printf("\t\t您与该用户并不是好友或者该用户不存在，发送失败\n");
     }
-    /*printf("请输入bye退出:");
-    char buff[5];
-    scanf("%s", buff);*/
 }
 
 void print_chat_fd(PACK pack) 
@@ -737,10 +781,11 @@ void print_creat_gp(PACK pack)
 {
    // printf("pack.send_username = %s\n", pack.send_username);
     //printf("pack.send_mess = %s\n", pack.mess);
+    printf("\n");
     if(strcmp("success", pack.mess) == 0) {
-        printf("群%s创建成功\n", pack.send_username);
+        printf("\t\t群%s创建成功\n", pack.send_username);
     } else {
-        printf("群%s创建失败\n", pack.send_username);
+        printf("\t\t群名重复 群%s创建失败\n", pack.send_username);
     }
 }
 
@@ -769,11 +814,17 @@ void print_chat_gp(PACK pack)
     printf("\n");
     printf("群%s中的用户%s发来了一条群消息:%s\n", pack.send_username, pack.username, pack.mess);
 }
+void deal_fail_chat_gp(PACK pack)
+{
+    printf("\n");
+    if(strcmp("fail", pack.mess) == 0) {
+        printf("\t\t您已被群主禁言,对该群成员将不显示您的信息，请输入bye退出\n");
+    }
+}
 
 void print_gp_list(PACK pack)
 {
     printf("\n");
-   // printf("您的群列表为:\n");
     int t = strcmp(pack.send_username, "bye");
     if(t != 0) {
         printf("\t%s\n", pack.send_username);
@@ -783,7 +834,6 @@ void print_gp_list(PACK pack)
 void print_gp_user_list(PACK pack)
 {
     printf("\n");
-    //printf("群%s的成员有:\n", pack.username);
     int t = strcmp(pack.send_username, "bye");
     if(t != 0) {
         printf("\t   %s\n", pack.send_username);
@@ -808,4 +858,15 @@ void recv_file(PACK pack)
         perror("recv_file:write\n");
     }
     close(fd);
+}
+
+void deal_untalk_gp(PACK pack)
+{
+    printf("\n");
+    if(strcmp("no", pack.password) == 0) {
+        printf("禁言失败\n");
+    }
+    if(strcmp("yes", pack.password) == 0) {
+        printf("禁言成功\n");
+    }
 }

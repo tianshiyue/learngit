@@ -20,14 +20,18 @@ void MYSQL_delfd(PACK);
 int MYSQL_deal_chat_fd(PACK);
 void MYSQL_chat_fd(PACK);
 FD_list MYSQL_fd_list(PACK,FD_list);
+FD_list MYSQL_online_fd_list(FD_list);
 FD_chat MYSQL_fd_chatstore(PACK, FD_chat);
-void  MYSQL_creat_gp(PACK);
+int MYSQL_creat_gp(PACK);
 int MYSQL_join_gp(PACK);
 int MYSQL_quit_gp(PACK);
 chat_GP MYSQL_chat_gp(PACK, chat_GP);
+int MYSQL_deal_chat_gp(PACK);
 GP_list MYSQL_gp_list(PACK, GP_list);
 GP_user_list MYSQL_gp_user_list(PACK, GP_user_list);
 GP_chatstore MYSQL_gp_chatstore(PACK, GP_chatstore);
+int MYSQL_untalk_gp(PACK);
+void MYSQL_deal_untalk_gp(PACK);
 
 
 #endif

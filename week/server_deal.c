@@ -37,6 +37,7 @@ void deal_gp_user_list(PACK);
 void deal_gp_chat_store(PACK);
 void deal_send_file(PACK);
 void deal_online_fd_list(PACK);
+void deal_untalk_gp(PACK);
 
 static int cli_fd;
 
@@ -112,6 +113,9 @@ void deal_pack(PACK pack, int cli_fd)
         case ONLINE_FD_LIST:
             deal_online_fd_list(pack);
             break;
+        case UNTALK_GP:
+            deal_untalk_gp(pack);
+            break;
     }
 }
 
@@ -126,7 +130,6 @@ void send_PACK(PACK pack)
 void send_other_PACK(PACK pack)
 {
     int ret;
-    //printf("********88\n");
     if((ret = send(pack.fd, &pack, sizeof(PACK), 0))<0) {
         perror("send_other_pack：send\n");
     }
@@ -153,6 +156,17 @@ typedef struct find_fd {
 } find_fd;
 
 find_fd *phead = NULL, *pend;
+
+/*typedef struct online_mess {
+    int fd;
+    int type;
+    char name1[USERNAME_LEN];
+    char name2[USERNAME_LEN];
+    char mess[USERNAME_LEN];
+    struct online_mess *next;
+} online_mess;
+
+online_mess *phead1 = NULL, *pend1;*/
 
 void deal_login(PACK pack, int cli_fd)
 {
@@ -272,7 +286,7 @@ void deal_fd_list(PACK pack)
 {
     PACK send_pack;
     FD_list fd_list;
-    int t = 1;
+    int i;
     send_pack.type = RECV_FD_LIST;
     strcpy(fd_list.username, pack.username);
     find_fd *ptemp;
@@ -285,19 +299,40 @@ void deal_fd_list(PACK pack)
         ptemp = ptemp->next;
     }
     fd_list  = MYSQL_fd_list(pack, fd_list);
-    //printf("22222222\n");
-    for(int i = 0; t != 0; i++) {
+   // printf("22222222\n");
+    for(i = 0; strcmp(fd_list.send_list[i], "bye") != 0; i++) {
         //printf("%s\n", fd_list.send_list[i]);
-        t = strcmp(fd_list.send_list[i], "bye");
         strcpy(send_pack.send_username, fd_list.send_list[i]);
         send_other_PACK(send_pack);
     }
+    //printf("fd_list.send_list[%d] = %s\n", i, fd_list.send_list[i]);
     memset(&fd_list, 0, sizeof(FD_list));
 }
 
 void deal_online_fd_list(PACK pack)
 {
-    
+    int t = 1;
+    PACK send_pack;
+    FD_list fd_list, fd_list1;
+    send_pack.type = RECV_ONLINE_FD_LIST;
+    strcpy(fd_list.username, pack.username);
+    find_fd *ptemp;
+    ptemp = phead->next;
+     while(ptemp != NULL) {
+        if(strcmp(ptemp->name, pack.username) == 0) {
+            send_pack.fd = ptemp->fd;
+            break;
+        }
+        ptemp = ptemp->next;
+    }
+    fd_list = MYSQL_fd_list(pack, fd_list);
+    int i = 0;
+    fd_list1 = MYSQL_online_fd_list(fd_list);
+    for(int i = 0; strcmp("bye", fd_list1.send_list[i]) != 0; i++) {
+        strcpy(send_pack.send_username, fd_list1.send_list[i]);
+        send_other_PACK(send_pack);
+    }
+    memset(&fd_list1, 0, sizeof(FD_list));
 }
 
 void deal_chat_fd(PACK pack)
@@ -337,8 +372,7 @@ void deal_chat_fd(PACK pack)
 
 void deal_fd_chatstore(PACK pack)
 {
-    int i;
-    int t = 1;
+    int i = 0;
     PACK send_pack;
     FD_chat fd_chat;
     find_fd *ptemp;
@@ -353,9 +387,8 @@ void deal_fd_chatstore(PACK pack)
         ptemp = ptemp->next;
     }
     fd_chat = MYSQL_fd_chatstore(send_pack, fd_chat);
-    while(t != 0) {
+    while(strcmp(fd_chat.send_username[i], "bye") != 0) {
        // printf("6666666666\n");
-        t = strcmp(fd_chat.message[i], "bye");
         send_pack.type = RECV_FD_CHATSTORE;
         strcpy(send_pack.username, fd_chat.username[i]);
         strcpy(send_pack.send_username, fd_chat.send_username[i]);
@@ -366,14 +399,19 @@ void deal_fd_chatstore(PACK pack)
     memset(&fd_chat, 0, sizeof(FD_chat));
 }
 
+
 void deal_creat_gp(PACK pack) 
 {
     PACK send_pack;
     strcpy(send_pack.username, pack.username);
     strcpy(send_pack.send_username, pack.send_username);
-    MYSQL_creat_gp(pack);
-    strcpy(send_pack.mess, "success");
-    printf("send_pack.mess = %s\n", send_pack.mess);
+    int flag = MYSQL_creat_gp(pack);
+    if(flag == 0) {
+        strcpy(send_pack.mess, "success");
+    }
+    if(flag == -1) {
+        strcpy(send_pack.mess, "fail");
+    }
     send_pack.type = RECV_CREAT_GP;
     send_PACK(send_pack);
 }
@@ -412,27 +450,36 @@ void deal_chat_gp(PACK pack)
 {
     int i = 0;
     PACK send_pack;
+    find_fd *ptemp;
+    ptemp = phead->next;
+    int flag = MYSQL_deal_chat_gp(pack);
+    printf("flag = %d\n", flag);
+    printf("@@@@@@@@@@\n");
+    if(flag == -1) {
+        while(ptemp != NULL) {
+            if(strcmp(ptemp->name, pack.username) == 0) {
+                PACK pack1;
+                strcpy(pack1.mess, "fail");
+                pack1.type = FAIL_CHAT_GP;
+                pack1.fd = ptemp->fd;
+                printf("********\n");
+                send_other_PACK(pack1);
+                return;
+            }
+        }
+    }
     chat_GP chat_gp;
-    //strcpy(chat_gp.username, pack.username);
-    //strcpy(chat_gp.groupname, pack.send_username);
     send_pack.type = RECV_CHAT_GP;
     strcpy(send_pack.username, pack.username);
     strcpy(send_pack.send_username, pack.send_username);
     strcpy(send_pack.mess, pack.mess);
     chat_gp = MYSQL_chat_gp(pack, chat_gp);
-    find_fd *ptemp;
-    ptemp = phead->next;
-    //printf("pack.username = %s\n", pack.username);
     while(strcmp("bye", chat_gp.send_username[i]) != 0) {
-       // printf("chat_gp.send_username[%d] = %s\n", i, chat_gp.send_username[i]);
         while(ptemp != NULL) {
-           // printf("ptemp->name = %s\n", ptemp->name);
             if(strcmp(chat_gp.send_username[i], pack.username) == 0) {
                 break;
             }
             if(strcmp(ptemp->name, chat_gp.send_username[i]) == 0) {
-                //printf("ddddddddddd\n");
-                //printf("send_pack.send_username = %s\n", send_pack.send_username);
                 send_pack.fd = ptemp->fd;
                 send_other_PACK(send_pack);
                 ptemp = phead->next;
@@ -448,7 +495,6 @@ void deal_chat_gp(PACK pack)
 void deal_gp_list(PACK pack)
 {
     int i = 0;
-    int t = 1;
     PACK send_pack;
     send_pack.type = RECV_GP_LIST;
     GP_list gp_list;
@@ -461,8 +507,7 @@ void deal_gp_list(PACK pack)
         }
         ptemp = ptemp->next;
     }
-    while(t != 0) {
-        t = strcmp(gp_list.list[i], "bye");
+    while(strcmp(gp_list.list[i], "bye") != 0) {
         strcpy(send_pack.send_username, gp_list.list[i]);
         send_other_PACK(send_pack);
         i++;
@@ -486,8 +531,7 @@ void deal_gp_user_list(PACK pack)
         }
         ptemp = ptemp->next;
     }
-    while(t != 0) {
-        t = strcmp(gp_user_list.list[i], "bye");
+    while(strcmp(gp_user_list.list[i], "bye") != 0) {
         strcpy(send_pack.send_username, gp_user_list.list[i]);
         send_other_PACK(send_pack);
         i++;
@@ -512,8 +556,7 @@ void deal_gp_chat_store(PACK pack)
     }
     GP_chatstore gp_chatstore;
     gp_chatstore = MYSQL_gp_chatstore(pack, gp_chatstore);
-    while(t != 0) {
-        t = strcmp(gp_chatstore.mess[i], "bye");
+    while(strcmp(gp_chatstore.mess[i], "bye") != 0) {
         send_pack.type = RECV_GP_CHATSTORE;
         strcpy(send_pack.username, gp_chatstore.username[i]);
         //strcpy(send_pack.send_username, gp_chatstore.send_username[i]);
@@ -522,6 +565,30 @@ void deal_gp_chat_store(PACK pack)
         send_other_PACK(send_pack);
     }
     memset(&gp_chatstore, 0, sizeof(GP_chatstore));
+}
+
+void deal_untalk_gp(PACK pack)
+{
+    pack.type = RECV_UNTALK_GP;
+    find_fd *ptemp;
+    ptemp = phead->next;
+    while(ptemp != NULL) {
+        if(strcmp(pack.username, ptemp->name) == 0) {
+            pack.fd = ptemp->fd;
+            break;
+        }
+        ptemp = ptemp->next;
+    }
+    int flag = MYSQL_untalk_gp(pack);
+    if(flag == -1) {
+        strcpy(pack.password, "no");
+        send_other_PACK(pack);
+    }
+    if(flag == 0) {
+        strcpy(pack.password, "yes");
+        MYSQL_deal_untalk_gp(pack);
+        send_other_PACK(pack);
+    }
 }
 
 void deal_send_file(PACK pack)

@@ -11,7 +11,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-
 int                 i;
 int                 ret;
 unsigned int        num_fields;
@@ -186,16 +185,39 @@ FD_list  MYSQL_fd_list(PACK pack, FD_list fd_list)
     if(result) {
         while(row = mysql_fetch_row(result)) {
             if(strcmp(row[0], pack.username) == 0) {
-                printf("row[1] = %s\n", row[1]);
+                //printf("row[1] = %s\n", row[1]);
                 strcpy(fd_list.send_list[i], row[1]);
-                printf("fd_list.send_list[%d] = %s\n", i, fd_list.send_list);
+                //printf("fd_list.send_list[%d] = %s\n", i, fd_list.send_list);
                 i++;
             }
         }
     }
-    //printf("i = %d\n", i);
-    strcpy(fd_list.send_list[i+1], "bye");
+    strcpy(fd_list.send_list[i], "bye");
+    //printf("fd_list.send_list[%d] = %s\n", i, fd_list.send_list);
     return fd_list;
+}
+
+FD_list MYSQL_online_fd_list(FD_list fd_list)
+{
+    accept_mysql();
+    int i = 0;
+    int k = 0;
+    FD_list fd_list1;
+    memset(&fd_list1, 0, sizeof(FD_list));
+    while(strcmp("bye", fd_list.send_list[i]) != 0) {
+        mysql_query(&mysql, "select *from user");
+        result = mysql_store_result(&mysql);
+        while(row = mysql_fetch_row(result)) {
+            if(strcmp(row[0], fd_list.send_list[i]) == 0 && atoi(row[2]) == 1) {
+                strcpy(fd_list1.send_list[k], row[0]);
+                k++;
+                break;
+            }
+        }
+        i++;
+    }
+    strcpy(fd_list1.send_list[k], "bye");
+    return fd_list1;
 }
 
 FD_chat MYSQL_fd_chatstore(PACK pack, FD_chat fd_chat)
@@ -225,15 +247,27 @@ FD_chat MYSQL_fd_chatstore(PACK pack, FD_chat fd_chat)
 }
 
 
-void  MYSQL_creat_gp(PACK pack)
+int  MYSQL_creat_gp(PACK pack)
 {
     accept_mysql();
+    int flag = 0;
     char buff[200];
+    mysql_query(&mysql, "select *from groups");
+    result = mysql_store_result(&mysql);
+    if(result) {
+        while(row = mysql_fetch_row(result)) {
+            if(strcmp(row[1], pack.send_username) == 0) {
+                flag = -1;
+                return flag;
+            }
+        }
+    }
     sprintf(buff, "insert into groups(group_own, group_name) values ('%s','%s')", pack.username, pack.send_username);
     ret = mysql_query(&mysql, buff);
     sprintf(buff, "insert into group_member (group_name, group_user, flag) values ('%s', '%s', 1)", pack.send_username, pack.username);
     ret = mysql_query(&mysql, buff);
     printf("群%s创建成功\n", pack.send_username);
+    return flag;
 }
 
 int MYSQL_join_gp(PACK pack)
@@ -247,18 +281,14 @@ int MYSQL_join_gp(PACK pack)
     if (result) {
         while((row = mysql_fetch_row(result))) {
             if (strcmp(row[1], pack.send_username) == 0) {
-                //mysql_query(&mysql, "select *from group_member");
                 sprintf(buff, "insert into group_member (group_name, group_user, flag) values ('%s', '%s', 0)", pack.send_username, pack.username);
                 ret = mysql_query(&mysql, buff);
-                //printf("%s\n", buff);
                 flag = 1;
                 break;
             }
             i++;
         }
     }
-    //printf("i = %d\n", i);
-    //printf("flag = %d", flag);
     return flag;
 }
 
@@ -282,6 +312,25 @@ int MYSQL_quit_gp(PACK pack)
         }
     }
     printf("flag = %d\n", flag);
+    return flag;
+}
+
+int MYSQL_deal_chat_gp(PACK pack) 
+{
+    int flag = 0;
+    accept_mysql();
+    mysql_query(&mysql, "select *from group_member");
+    result = mysql_store_result(&mysql);
+    if(result) {
+        while(row = mysql_fetch_row(result)) {
+            if(strcmp(pack.username, row[1]) == 0 && strcmp(pack.send_username, row[0]) == 0) {
+                if(atoi(row[2]) == -1) {
+                    flag = -1;
+                    return flag;
+                }
+            }
+        }
+    }
     return flag;
 }
 
@@ -371,4 +420,41 @@ GP_chatstore MYSQL_gp_chatstore(PACK pack, GP_chatstore gp_chatstore)
         }
     }
     return gp_chatstore;
+}
+
+int MYSQL_untalk_gp(PACK pack)
+{
+    accept_mysql();
+    int flag = -1;
+    mysql_query(&mysql, "select *from groups");
+    result = mysql_store_result(&mysql);
+    if(result) {
+        while(row = mysql_fetch_row(result)) {
+            if(strcmp(row[0], pack.username) == 0 && strcmp(row[1], pack.mess) == 0) {
+                flag = 0;
+                return flag;
+            }
+        }
+    }
+    return flag;
+}
+
+void MYSQL_deal_untalk_gp(PACK pack)
+{
+    accept_mysql();
+    char buff[200];
+    mysql_query(&mysql, "select *from group_member");
+    result = mysql_store_result(&mysql);
+    if(result) {
+        printf("pack.send_username = %s\n", pack.send_username);
+        while(row = mysql_fetch_row(result)) {
+            printf("row[1] = %s\n", row[1]);
+            if(strcmp(row[1], pack.send_username) == 0 && strcmp(pack.mess, row[0]) == 0) {
+                printf("^^^^^^^^^^^^^\n");
+                sprintf(buff, "update group_member set flag = -1 where group_user = '%s' and group_name = '%s'", pack.send_username, pack.mess);
+                printf("%s\n", buff);
+                mysql_query(&mysql, buff);
+            }
+        }
+    }
 }
