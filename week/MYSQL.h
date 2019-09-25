@@ -24,7 +24,7 @@ FD_list MYSQL_online_fd_list(FD_list);
 FD_chat MYSQL_fd_chatstore(PACK, FD_chat);
 int MYSQL_creat_gp(PACK);
 int MYSQL_join_gp(PACK);
-int MYSQL_quit_gp(PACK);
+QUIT_gp MYSQL_quit_gp(PACK, QUIT_gp);
 chat_GP MYSQL_chat_gp(PACK, chat_GP);
 int MYSQL_deal_chat_gp(PACK);
 GP_list MYSQL_gp_list(PACK, GP_list);
@@ -36,6 +36,8 @@ int MYSQL_untalk1_gp(PACK);
 void MYSQL_deal1_untalk_gp(PACK);
 int MYSQL_deal_invite_user(PACK);
 void MYSQL_invite_user_isok(PACK);
+int MYSQL_deal_exit_gp(PACK);
+void MYSQL_exit_gp_isok(PACK);
 
 
 #endif

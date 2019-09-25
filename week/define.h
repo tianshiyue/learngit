@@ -37,6 +37,7 @@
 #define UNTALK_GP    25
 #define DEAL_UNTALK_GP 26
 #define INVITE_USER 27
+#define EXIT_GP     28
 
 #define RECV_ADDFD 1001
 #define AGREE_ADDFD 1002
@@ -61,6 +62,9 @@
 #define RECV_DEAL_UNTALK_GP 1019
 #define RECV_INVITE_USER 1020
 #define IS_INVITE_USER   1021
+#define RECV_QUIT1_GP    1022
+#define RECV_EXIT_GP     1023
+#define IS_EXIT_GP       1024
 
 typedef struct PACK {
     char username[USERNAME_LEN];
@@ -87,6 +91,12 @@ typedef struct FD_chat {
     char send_username[USERNAME_LEN][USERNAME_LEN];
     char message[100][100];
 } FD_chat;
+
+typedef struct QUIT_gp {
+    char username[30][30];
+    int flag;
+    int oo;
+} QUIT_gp;
 
 typedef struct chat_GP {
     char username[USERNAME_LEN];

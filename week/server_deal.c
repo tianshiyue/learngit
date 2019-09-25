@@ -40,6 +40,7 @@ void deal_online_fd_list(PACK);
 void deal_untalk_gp(PACK);
 void deal1_untalk_gp(PACK);
 void deal_invite_user(PACK);
+void deal_exit_gp(PACK);
 
 static int cli_fd;
 
@@ -123,6 +124,9 @@ void deal_pack(PACK pack, int cli_fd)
             break;
         case INVITE_USER:
             deal_invite_user(pack);
+            break;
+        case EXIT_GP:
+            deal_exit_gp(pack);
             break;
     }
 }
@@ -441,13 +445,38 @@ void deal_join_gp(PACK pack)
 
 void deal_quit_gp(PACK pack)
 {
-    PACK send_pack;
+    int i = 0;
+    PACK send_pack, send_pack1;
+    send_pack1.type = RECV_QUIT1_GP;
+    QUIT_gp quit_gp;
     send_pack.type = RECV_QUIT_GP;
+    strcpy(send_pack1.send_username, pack.send_username);
+    strcpy(send_pack1.username, pack.username);
     strcpy(send_pack.username, pack.username);
     strcpy(send_pack.send_username, pack.send_username);
-    int flag = MYSQL_quit_gp(send_pack);
-    if(flag != 0) {
+    quit_gp = MYSQL_quit_gp(send_pack, quit_gp);
+    if(quit_gp.flag != 0) {
         strcpy(send_pack.mess, "success");
+        if(quit_gp.oo == -1) {
+            find_fd *ptemp;
+            ptemp = phead->next;
+            while(strcmp(quit_gp.username[i], "bye") != 0) {
+                ptemp = phead->next;
+                while(ptemp != NULL) {
+                    if(strcmp(quit_gp.username[i], pack.username) == 0) {
+                    break;
+                    }
+                    if(strcmp(ptemp->name, quit_gp.username[i]) == 0) {
+                        send_pack1.fd = ptemp->fd;
+                        send_other_PACK(send_pack1);
+                        ptemp = phead->next;
+                        break;
+                    }
+                    ptemp = ptemp->next;
+                }
+                i++;
+            }
+        }
     } else {
         strcpy(send_pack.mess, "fail");
     }
@@ -650,6 +679,37 @@ void deal_invite_user(PACK pack)
         send_other_PACK(send_pack1);
     }
     if(flag == -1) {
+        strcpy(send_pack1.password, "fail");
+        send_other_PACK(send_pack1);
+    }
+}
+
+void deal_exit_gp(PACK pack) 
+{
+    
+    PACK send_pack,send_pack1;
+    send_pack.type = RECV_EXIT_GP;
+    send_pack1.type = IS_EXIT_GP;
+    find_fd *ptemp;
+    ptemp = phead->next;
+    while(ptemp != NULL) {
+        if(strcmp(ptemp->name, pack.send_username) ==0 ) {
+            send_pack.fd = ptemp->fd;
+            strcpy(send_pack.username, pack.username);
+            strcpy(send_pack.mess, pack.mess);
+        }
+        if(strcmp(ptemp->name, pack.username) == 0) {
+            send_pack1.fd = ptemp->fd;
+        }
+        ptemp = ptemp->next;
+    }
+    int flag = MYSQL_deal_exit_gp(pack);
+    if(flag == 2) {
+        send_other_PACK(send_pack);
+        MYSQL_exit_gp_isok(pack);
+        strcpy(send_pack1.password, "success");
+        send_other_PACK(send_pack1);
+    } else {
         strcpy(send_pack1.password, "fail");
         send_other_PACK(send_pack1);
     }

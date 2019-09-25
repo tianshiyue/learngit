@@ -292,27 +292,53 @@ int MYSQL_join_gp(PACK pack)
     return flag;
 }
 
-int MYSQL_quit_gp(PACK pack) 
+QUIT_gp  MYSQL_quit_gp(PACK pack, QUIT_gp quit_gp) 
 {
-    int flag = 0;
+    int  i = 0;
+    quit_gp.flag = 0;
+    quit_gp.oo = 0;
     char buff[200];
     accept_mysql();
     mysql_query(&mysql, "select *from group_member");
     result = mysql_store_result(&mysql);
     if(result) {
         while((row = mysql_fetch_row(result))) {
-            printf("群名 = %s   用户名 = %s\n", pack.send_username, pack.username);
             if((strcmp(row[0], pack.send_username) ==0 && strcmp(row[1], pack.username) == 0)) {
-                flag = 1;
-                sprintf(buff,"delete from group_member where (group_name = '%s' and group_user = '%s')", pack.send_username, pack.username);
-                printf("%s\n", buff);
-                ret = mysql_query(&mysql, buff);
+                quit_gp.flag = 1;
+                if(atoi(row[2]) == 1) {
+                    printf("**********\n");
+                    quit_gp.oo = -1;
+                }
+                mysql_query(&mysql, "select *from group_member");
+                result = mysql_store_result(&mysql);
+                while(row = mysql_fetch_row(result)) {
+                    if(strcmp(row[0], pack.send_username) == 0) {
+                        strcpy(quit_gp.username[i], row[1]);
+                        //printf("###quit_gp.username[%d] = %s\n", i, quit_gp.username[i]);
+                        i++;
+                    }
+                }
                 break;
             }
         }
     }
-    printf("flag = %d\n", flag);
-    return flag;
+    strcpy(quit_gp.username[i], "bye");
+    int j = 0;
+    if(quit_gp.oo == -1) {
+        printf("^^^^^^^^^^^^^^\n");
+        mysql_query(&mysql, "select *from group_member");
+        result = mysql_store_result(&mysql);
+        while(strcmp(quit_gp.username[j], "bye") != 0) {
+            sprintf(buff,"delete from group_member where (group_name = '%s' and group_user = '%s')", pack.send_username, quit_gp.username[j]);
+            printf("%s\n", buff);
+            mysql_query(&mysql, buff);
+            j++;
+        }
+            sprintf(buff,"delete from groups where (group_own = '%s')", pack.username);
+            printf("buff = %s\n", buff);
+            mysql_query(&mysql, buff);
+    }
+    return quit_gp;
 }
 
 int MYSQL_deal_chat_gp(PACK pack) 
@@ -487,20 +513,42 @@ void MYSQL_deal1_untalk_gp(PACK pack)
     mysql_query(&mysql, buff);
 }
 
+
 int MYSQL_deal_invite_user(PACK pack)
 {
     accept_mysql();
-    int flag = 0;
+    int flag = -1;
+    int i = 1;
+    char join_user[20][20];
     mysql_query(&mysql, "select *from group_member");
     result = mysql_store_result(&mysql);
+    //printf("pack.mess = %s\n", pack.mess);
+    //printf("pack.username = %s\n", pack.username);
+    //printf("pack.send_username = %s\n", pack.send_username);
     if(result) {
         while(row = mysql_fetch_row(result)) {
-            if(strcmp(row[0], pack.mess) != 0 || strcmp(row[1], pack.username) != 0 || strcmp(row[1], pack.send_username) == 0) {
-                flag = -1;
-                return flag;
+            if(strcmp(row[0], pack.mess) == 0) {
+                strcpy(join_user[i], row[1]);
+                //printf("^^^^^^^^^join_user[%d] = %s\n", i, join_user[i]);
+                i++;
+                flag = 0;
             }
         }
     }
+    int j = i;
+    while(i--) {
+        //printf("join_user[%d] = %s\n", i, join_user[i]);
+        if(strcmp(join_user[i], pack.username) == 0) {
+            while(j--) {
+                if(strcmp(join_user[j],  pack.send_username) == 0) {
+                    //printf("&&&&&&&&&\n");
+                    flag = -1;
+                    return flag;
+                }
+            }
+        }
+        printf("i = %d\n", i);
+    } 
     return flag;
 }
 
@@ -510,5 +558,36 @@ void MYSQL_invite_user_isok(PACK pack)
     char buff[200];
     sprintf(buff, "insert into group_member (group_name, group_user, flag) values ('%s', '%s', 0)", pack.mess, pack.send_username);
     printf("%s\n", buff);
+    //mysql_query(&mysql, buff);
+}
+
+int MYSQL_deal_exit_gp(PACK pack)
+{
+    accept_mysql();
+    int flag = 0;
+    int i = 1;
+    mysql_query(&mysql, "select *from group_member");
+    result = mysql_store_result(&mysql);
+    if(result) {
+        while(row = mysql_fetch_row(result)) {
+            if(strcmp(row[0], pack.mess) == 0) {
+                if(strcmp(row[1], pack.send_username) == 0) {
+                    flag++;
+                }
+                if(strcmp(row[1], pack.username) == 0 && atoi(row[2]) == 1) {
+                    flag++;
+                }
+            }
+        }
+    }
+    return flag;
+}
+
+void MYSQL_exit_gp_isok(PACK pack)
+{
+    accept_mysql();
+    char buff[200];
+    printf("%s\n", buff);
+    sprintf(buff,"delete from group_member where (group_name = '%s' and group_user = '%s')", pack.mess, pack.send_username);
     mysql_query(&mysql, buff);
 }

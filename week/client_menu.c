@@ -243,7 +243,7 @@ int client_quit_gp(int client_fd)
 {
     PACK pack;
     strcpy(pack.username, name);
-    printf("\t\t请输入您想要退出的群名:");
+    printf("\t\t请输入您想要退出的群名，如果您是群主，您退出默认该群解散:");
     scanf("%s", pack.send_username);
     pack.type = QUIT_GP;
     int ret = send(client_fd, &pack, sizeof(PACK), 0);
@@ -349,6 +349,22 @@ int client_deal_invite_user(int client_fd)
     return INITB;
 }
 
+int client_exit_gp(int client_fd)
+{
+    PACK pack;
+    pack.type = EXIT_GP;
+    strcpy(pack.username, name);
+    printf("\t\t请输入您要踢人的群名:");
+    scanf("%s", pack.mess);
+    printf("\t\t请输入您要题的用户名:");
+    scanf("%s", pack.send_username);
+    int ret = send(client_fd, &pack, sizeof(PACK), 0);
+    if(ret < 0) {
+        perror("client_exit_gp:send\n");
+    }
+    return INITB;
+}
+
 int client_send_file(int client_fd)
 {
     PACK pack;
@@ -433,6 +449,7 @@ int use_menu(int client_fd)
 	printf("\t\t|      16、禁言              |\n");
 	printf("\t\t|      17、解除禁言          |\n");
 	printf("\t\t|      18、邀请进群          |\n");
+	printf("\t\t|      19、群踢人            |\n");
 	printf("\t\t|      0、退出               |\n");
 	printf("\t\t|****************************|\n");
 	printf("\t\t请输入您要进行的操作:");
@@ -475,6 +492,8 @@ int use_menu(int client_fd)
             return DEAL_UNTALK_GP;
         case 18:
             return INVITE_USER;
+        case 19:
+            return EXIT_GP;
         case 0:
             return EXITB;
         default :
@@ -547,6 +566,9 @@ void use_menuoi(int client_fd)
                 break;
             case INVITE_USER:
                 status = client_deal_invite_user(client_fd);
+                break;
+            case EXIT_GP:
+                status = client_exit_gp(client_fd);
                 break;
             case EXITB:
                 break;
@@ -635,6 +657,9 @@ void deal_fail_chat_gp(PACK);
 void deal1_untalk_gp(PACK);
 void deal_invite_user(PACK);
 void deal_is_invite_user(PACK);
+void deal_quit1_gp(PACK);
+void deal_exit_gp(PACK);
+void deal_is_exit_gp(PACK);
 
 void *recv_PACK(void *client_fd)
 {
@@ -714,6 +739,15 @@ void *recv_PACK(void *client_fd)
                 break;
             case IS_INVITE_USER:
                 deal_is_invite_user(pack);
+                break;
+            case RECV_QUIT1_GP :
+                deal_quit1_gp(pack);
+                break;
+            case RECV_EXIT_GP:
+                deal_exit_gp(pack);
+                break;
+            case IS_EXIT_GP:
+                deal_is_exit_gp(pack);
                 break;
         }
     }
@@ -954,5 +988,28 @@ void deal_is_invite_user(PACK pack)
     if(strcmp("success", pack.password) == 0) {
         printf("\t\t邀请成功\n");
         //printf("\t\t用户%s已是%s群成员\n", pack.send_username, pack.mess);
+    }
+}
+
+void deal_quit1_gp(PACK pack) 
+{
+    printf("\n");
+    printf("\t\t群主%s以退出群%s，群%s已解散\n", pack.username, pack.send_username, pack.send_username);
+}
+
+void deal_exit_gp(PACK pack)
+{
+    printf("\n");
+    printf("\t\t您被群主%s踢出群聊%s\n", pack.mess, pack.send_username);
+}
+
+void deal_is_exit_gp(PACK pack)
+{
+     printf("\n");
+    if(strcmp("fail", pack.password) == 0) {
+        printf("\t\t该群不存在或您没有权限或您不是该群成员，踢出失败\n");
+    }
+    if(strcmp("success", pack.password) == 0) {
+        printf("\t\t踢出成功\n");
     }
 }
