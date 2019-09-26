@@ -41,6 +41,8 @@ void deal_untalk_gp(PACK);
 void deal1_untalk_gp(PACK);
 void deal_invite_user(PACK);
 void deal_exit_gp(PACK);
+void deal_black_fd(PACK);
+void deal_exit_black_fd(PACK);
 
 static int cli_fd;
 
@@ -128,6 +130,12 @@ void deal_pack(PACK pack, int cli_fd)
         case EXIT_GP:
             deal_exit_gp(pack);
             break;
+        case BLACK_FD:
+            deal_black_fd(pack);
+            break;
+        case EXIT_BLACK_FD:
+            deal_exit_black_fd(pack);
+            break;
     }
 }
 
@@ -176,9 +184,8 @@ find_fd *phead = NULL, *pend;
     char name2[USERNAME_LEN];
     char mess[USERNAME_LEN];
     struct online_mess *next;
-} online_mess;
+} online_mess;*/
 
-online_mess *phead1 = NULL, *pend1;*/
 
 void deal_login(PACK pack, int cli_fd)
 {
@@ -290,8 +297,14 @@ void deal_recv_addfd(PACK pack)
 
 void deal_del_fd(PACK pack)
 {
-    MYSQL_delfd(pack);
-    printf("%s %s删除好友成功\n", pack.username, pack.send_username);
+    int flag = MYSQL_delfd(pack);
+    if(flag == 0) {
+        strcpy(pack.mess, "success");
+    } else {
+        strcpy(pack.mess, "fail");
+    }
+    pack.type = IS_DEL_FD;
+    send_PACK(pack);
 }
 
 void deal_fd_list(PACK pack)
@@ -347,6 +360,14 @@ void deal_online_fd_list(PACK pack)
     memset(&fd_list1, 0, sizeof(FD_list));
 }
 
+typedef struct Black_fd {
+    char username[USERNAME_LEN];
+    char send_username[USERNAME_LEN];
+    char mess[50];
+    struct Black_fd *next;
+} Black_fd;
+Black_fd  *phead1 = NULL, *pend1;
+
 void deal_chat_fd(PACK pack)
 {
     PACK send_pack, send_pack1;
@@ -369,11 +390,26 @@ void deal_chat_fd(PACK pack)
     }
 
     int t = MYSQL_deal_chat_fd(pack);
-    if(t == 0) {
-        send_other_PACK(send_pack);
+    if(t == -3) {
+        if(phead1 == NULL) {
+            phead1 = (struct Black_fd *)malloc(sizeof(struct Black_fd));
+            phead1->next = NULL;
+            pend1 = phead1;
+        } 
+        Black_fd *pnew1;
+        pnew1 = (struct Black_fd *)malloc(sizeof(struct Black_fd));
+        strcpy(pnew1->username, pack.username);
+        strcpy(pnew1->send_username, pack.send_username);
+        strcpy(pnew1->mess, pack.mess);
+        printf("@@@@@@@@@pack.mess = %s\n", pack.mess);
+        pnew1->next = NULL;
+        pend1->next = pnew1; 
+        pend1 = pnew1;
+    }
+    if(t == 2) {
         send_other_PACK(send_pack);
     }
-    if(t == -1) { 
+    if(t == 0) { 
         send_pack1.type = DEAL_CHAT_FD;
         strcpy(send_pack1.mess, "fail");
         send_other_PACK(send_pack1);
@@ -400,7 +436,6 @@ void deal_fd_chatstore(PACK pack)
     }
     fd_chat = MYSQL_fd_chatstore(send_pack, fd_chat);
     while(strcmp(fd_chat.send_username[i], "bye") != 0) {
-       // printf("6666666666\n");
         send_pack.type = RECV_FD_CHATSTORE;
         strcpy(send_pack.username, fd_chat.username[i]);
         strcpy(send_pack.send_username, fd_chat.send_username[i]);
@@ -712,6 +747,52 @@ void deal_exit_gp(PACK pack)
     } else {
         strcpy(send_pack1.password, "fail");
         send_other_PACK(send_pack1);
+    }
+}
+
+void deal_black_fd(PACK pack)
+{
+    PACK send_pack;
+    pack.type = IS_BLACK_FD;
+    find_fd *ptemp;
+    ptemp = phead->next;
+    while(ptemp != NULL) {
+        if(strcmp(ptemp->name, pack.username) == 0) {
+            pack.fd = ptemp->fd;
+            break;
+        }
+        ptemp = ptemp->next;
+    }
+    MYSQL_black_fd(pack);
+    send_other_PACK(pack);
+}
+
+void deal_exit_black_fd(PACK pack)
+{
+    PACK send_pack;
+    Black_fd *ptemp1;
+    ptemp1 = phead1->next;
+    find_fd *ptemp;
+    ptemp = phead->next;
+    while(ptemp != NULL) {
+        if(strcmp(ptemp->name, pack.username) == 0) {
+            send_pack.fd = ptemp->fd;
+            break;
+        }
+        ptemp = ptemp->next;
+    }
+    send_pack.type = IS_EXIT_BLACK_FD;
+    send_other_PACK(send_pack);
+    MYSQL_exit_black_fd(pack);
+    while(ptemp1 != NULL) {
+        if(strcmp(ptemp1->username, pack.send_username) == 0 && strcmp(ptemp1->send_username, pack.username) == 0) {
+            send_pack.type = RECV_CHAT_FD;
+            strcpy(send_pack.username, ptemp1->username);
+            strcpy(send_pack.mess, ptemp1->mess);
+            printf("send_pack.mess = %s\n", send_pack.mess);
+            send_other_PACK(send_pack);
+        }
+        ptemp1 = ptemp1->next;
     }
 }
 

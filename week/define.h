@@ -38,6 +38,8 @@
 #define DEAL_UNTALK_GP 26
 #define INVITE_USER 27
 #define EXIT_GP     28
+#define BLACK_FD    29
+#define EXIT_BLACK_FD 30
 
 #define RECV_ADDFD 1001
 #define AGREE_ADDFD 1002
@@ -65,6 +67,9 @@
 #define RECV_QUIT1_GP    1022
 #define RECV_EXIT_GP     1023
 #define IS_EXIT_GP       1024
+#define IS_BLACK_FD      1025
+#define IS_EXIT_BLACK_FD 1026
+#define IS_DEL_FD        1027
 
 typedef struct PACK {
     char username[USERNAME_LEN];

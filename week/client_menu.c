@@ -423,6 +423,34 @@ int client_gp_chatstore(int client_fd)
     return INITB;
 }
 
+int client_black_fd(int client_fd)
+{
+    PACK pack;
+    pack.type = BLACK_FD;
+    strcpy(pack.username, name);
+    printf("\t\t请输入您要屏蔽的好友名(屏蔽后您将收不到该好友的消息):");
+    scanf("%s", pack.send_username);
+    int ret = send(client_fd, &pack, sizeof(PACK), 0);
+    if(ret < 0) {
+        perror("client_black_fd:send\n");
+    }
+    return INITB;
+}
+
+int client_exit_black_fd(int client_fd)
+{
+    PACK pack;
+    pack.type = EXIT_BLACK_FD;
+    strcpy(pack.username, name);
+    printf("\t\t请输入您要解除屏蔽的好友名:");
+    scanf("%s", pack.send_username);
+    int ret = send(client_fd, &pack, sizeof(PACK), 0);
+    if(ret < 0) {
+        perror("client_exit_black_fd:send\n");
+    }
+    return INITB;
+}
+
 int use_menu(int client_fd)
 {
     time_t Time = time(NULL);
@@ -450,6 +478,8 @@ int use_menu(int client_fd)
 	printf("\t\t|      17、解除禁言          |\n");
 	printf("\t\t|      18、邀请进群          |\n");
 	printf("\t\t|      19、群踢人            |\n");
+	printf("\t\t|      20、屏蔽好友          |\n");
+	printf("\t\t|      21、解除屏蔽          |\n");
 	printf("\t\t|      0、退出               |\n");
 	printf("\t\t|****************************|\n");
 	printf("\t\t请输入您要进行的操作:");
@@ -494,6 +524,10 @@ int use_menu(int client_fd)
             return INVITE_USER;
         case 19:
             return EXIT_GP;
+        case 20:
+            return BLACK_FD;
+        case 21:
+            return EXIT_BLACK_FD;
         case 0:
             return EXITB;
         default :
@@ -569,6 +603,12 @@ void use_menuoi(int client_fd)
                 break;
             case EXIT_GP:
                 status = client_exit_gp(client_fd);
+                break;
+            case BLACK_FD:
+                status = client_black_fd(client_fd);
+                break;
+            case EXIT_BLACK_FD:
+                status = client_exit_black_fd(client_fd);
                 break;
             case EXITB:
                 break;
@@ -660,6 +700,9 @@ void deal_is_invite_user(PACK);
 void deal_quit1_gp(PACK);
 void deal_exit_gp(PACK);
 void deal_is_exit_gp(PACK);
+void deal_is_black_fd(PACK);
+void deal_is_exit_black_fd(PACK);
+void deal_is_del_fd(PACK);
 
 void *recv_PACK(void *client_fd)
 {
@@ -748,6 +791,15 @@ void *recv_PACK(void *client_fd)
                 break;
             case IS_EXIT_GP:
                 deal_is_exit_gp(pack);
+                break;
+            case IS_BLACK_FD:
+                deal_is_black_fd(pack);
+                break;
+            case IS_EXIT_BLACK_FD:
+                deal_is_exit_black_fd(pack);
+                break;
+            case IS_DEL_FD:
+                deal_is_del_fd(pack);
                 break;
         }
     }
@@ -1011,5 +1063,26 @@ void deal_is_exit_gp(PACK pack)
     }
     if(strcmp("success", pack.password) == 0) {
         printf("\t\t踢出成功\n");
+    }
+}
+
+void deal_is_black_fd(PACK pack)
+{
+    printf("\n");
+    printf("\t\t拉黑成功\n");
+}
+void deal_is_exit_black_fd(PACK pack)
+{
+    printf("\n");
+    printf("\t\t解除成功\n");
+}
+
+void deal_is_del_fd(PACK pack)
+{
+    printf("\n");
+    if(strcmp(pack.mess, "success") == 0) {
+        printf("\t\t删除成功\n");
+    } else {
+        printf("\t\t删除失败 您与该用户并不是好友或者该用户不存在");
     }
 }

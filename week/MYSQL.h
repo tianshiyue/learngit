@@ -16,7 +16,7 @@ int MYSQL_login(PACK);
 void MYSQL_exit(PACK);
 int MYSQL_deal_addfd(PACK);
 int MYSQL_addfd(PACK);
-void MYSQL_delfd(PACK);
+int  MYSQL_delfd(PACK);
 int MYSQL_deal_chat_fd(PACK);
 void MYSQL_chat_fd(PACK);
 FD_list MYSQL_fd_list(PACK,FD_list);
@@ -38,6 +38,8 @@ int MYSQL_deal_invite_user(PACK);
 void MYSQL_invite_user_isok(PACK);
 int MYSQL_deal_exit_gp(PACK);
 void MYSQL_exit_gp_isok(PACK);
+void MYSQL_black_fd(PACK);
+void MYSQL_exit_black_fd(PACK);
 
 
 #endif

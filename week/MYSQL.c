@@ -127,10 +127,10 @@ int  MYSQL_addfd(PACK pack)
     char buff[200];
     mysql_query(&mysql, "select *from friends");
     result = mysql_store_result(&mysql);
-    sprintf(buff, "insert into friends (username1, username2)values ('%s', '%s')", pack.username, pack.send_username);
+    sprintf(buff, "insert into friends (username1, username2, flag)values ('%s', '%s', 1)", pack.username, pack.send_username);
     ret = mysql_query(&mysql,buff);
     if (!ret) {
-        sprintf(buff, "insert into friends (username1, username2)values ('%s', '%s')", pack.send_username, pack.username);
+        sprintf(buff, "insert into friends (username1, username2, flag)values ('%s', '%s', 1)", pack.send_username, pack.username);
         ret = mysql_query(&mysql,buff);
         if (!ret) {
             mysql_close(&mysql);
@@ -139,28 +139,55 @@ int  MYSQL_addfd(PACK pack)
     }
 }
 
-void MYSQL_delfd(PACK pack)
+int  MYSQL_delfd(PACK pack)
 {
     accept_mysql();
+    int flag = -1;
     char buff[200];
-    sprintf(buff,"delete from friends where (username1 = '%s' and username2 = '%s') or (username1 ='%s' and username2 = '%s')", pack.username, pack.send_username, pack.send_username, pack.username);
-    mysql_query(&mysql, buff);
+    mysql_query(&mysql, "select *from friends");
+    result = mysql_store_result(&mysql);
+    if(result) {
+        while(row = mysql_fetch_row(result)) {
+            if(strcmp(pack.username, row[0]) == 0) {
+                if(strcmp(pack.send_username, row[1]) == 0) {
+                    sprintf(buff,"delete from friends where (username1 = '%s' and username2 = '%s') or (username1 ='%s' and username2 = '%s')", pack.username, pack.send_username, pack.send_username, pack.username);
+                    mysql_query(&mysql, buff);
+                    flag = 0;
+                    return flag;
+                }
+            }
+        }
+    }
+    return flag;
 }
 
 int MYSQL_deal_chat_fd(PACK pack)
 {
     accept_mysql();
-    int flag = -1;
+    int flag = 0;
     mysql_query(&mysql, "select *from friends");
     result = mysql_store_result(&mysql);
     if(result) {
         while(row = mysql_fetch_row(result)) {
-            if((strcmp(pack.username, row[0]) == 0 && strcmp(pack.send_username, row[1]) == 0) && (strcmp(pack.send_username, row[0]) == 0 && strcmp(pack.username, row[1]) != 0)) {
-                flag = 0;
-                return flag;
+            // A给B发消息 B可能屏蔽A
+            // flag = 2：A与B为好友 
+            if(strcmp(pack.username, row[0]) == 0 && strcmp(pack.send_username, row[1]) == 0 && atoi(row[2]) == 1) {
+                //printf("**********\n");
+                flag ++;
+            }
+            if(strcmp(pack.username, row[1]) == 0 && strcmp(pack.send_username, row[0]) == 0 && atoi(row[2]) == 1) {
+                //printf("###########\n");
+                flag++;
+            }
+            // B屏蔽A
+            if(strcmp(pack.username, row[1]) == 0 && strcmp(pack.send_username, row[0]) == 0 && atoi(row[2]) == 0) {
+                //printf("@@@@@@@@@\n");
+                flag = -3;
+                break;
             }
         }
     }
+    printf("flag = %d\n", flag);
     return flag;
 }
 
@@ -193,7 +220,7 @@ FD_list  MYSQL_fd_list(PACK pack, FD_list fd_list)
         }
     }
     strcpy(fd_list.send_list[i], "bye");
-    //printf("fd_list.send_list[%d] = %s\n", i, fd_list.send_list);
+    printf("fd_list.send_list[%d] = %s\n", i, fd_list.send_list);
     return fd_list;
 }
 
@@ -587,7 +614,22 @@ void MYSQL_exit_gp_isok(PACK pack)
 {
     accept_mysql();
     char buff[200];
-    printf("%s\n", buff);
     sprintf(buff,"delete from group_member where (group_name = '%s' and group_user = '%s')", pack.mess, pack.send_username);
+    mysql_query(&mysql, buff);
+}
+
+void MYSQL_black_fd(PACK pack)
+{
+    accept_mysql();
+    char buff[200];
+    sprintf(buff, "update friends set flag = 0 where username1 = '%s' and username2 = '%s'", pack.username, pack.send_username);
+    mysql_query(&mysql, buff);
+}
+
+void MYSQL_exit_black_fd(PACK pack)
+{
+    accept_mysql();
+    char buff[200];
+    sprintf(buff, "update friends set flag = 1 where username1 = '%s' and username2 = '%s'", pack.username, pack.send_username); 
     mysql_query(&mysql, buff);
 }
