@@ -177,14 +177,52 @@ typedef struct find_fd {
 
 find_fd *phead = NULL, *pend;
 
-/*typedef struct online_mess {
+typedef struct online_mess {
     int fd;
     int type;
     char name1[USERNAME_LEN];
     char name2[USERNAME_LEN];
     char mess[USERNAME_LEN];
     struct online_mess *next;
-} online_mess;*/
+} online_mess;
+
+online_mess *phead2 = NULL, *pend2, *pnew2;
+
+// 将未上线的用户的消息存在服务端
+void deal_online_mess(PACK pack)
+{
+    if(phead2 == NULL) {
+        phead2 = (online_mess *)malloc(sizeof(online_mess));
+        phead2->next = NULL;
+        pend2 = phead2;
+    }
+    pnew2 = (online_mess *)malloc(sizeof(online_mess));
+    strcpy(pnew2->name1, pack.username);
+    strcpy(pnew2->name2, pack.send_username);
+    strcpy(pnew2->mess, pack.mess);
+    pnew2->type = pack.type;
+    pnew2->next = NULL;
+    pend2->next = pnew2;
+    pend2 = pnew2;
+}
+ 
+// 检测用户登录，发送离线消息盒子的消息 
+void send_online_mess(PACK pack)
+{
+    online_mess *ptemp2;
+    ptemp2 = phead2;
+    while(ptemp2 != NULL) {
+        if(strcmp(pack.username, ptemp2->name2) == 0) {
+            PACK send_pack;
+            strcpy(send_pack.username, ptemp2->name1);
+            strcpy(send_pack.mess, ptemp2->mess);
+            send_pack.fd = pack.fd;
+            send_pack.type = ptemp2->type;
+            send_other_PACK(send_pack);
+        }
+        ptemp2 = ptemp2->next;
+    }
+}
 
 
 void deal_login(PACK pack, int cli_fd)
@@ -203,9 +241,7 @@ void deal_login(PACK pack, int cli_fd)
         find_fd *pnew;
         pnew = (struct find_fd *)malloc(sizeof(struct find_fd));
         pnew->fd = cli_fd;
-        //printf("pnew->fd = %d\n", pnew->fd);
         strcpy(pnew->name, send_pack.username);
-        //printf("pnew->name = %s\n", pnew->name);
         pnew->next = NULL;
         pend->next = pnew;
         pend = pnew;
@@ -213,6 +249,8 @@ void deal_login(PACK pack, int cli_fd)
         send_pack.type = -1;
     }
     send_PACK(send_pack);
+    pack.fd = cli_fd;
+    send_online_mess(pack);
 }
 
 void deal_exit(PACK pack)
@@ -238,26 +276,35 @@ void deal_addfd(PACK pack)
     PACK send_pack, send_pack1;
     printf("pack.username = %s\n", pack.username);
     printf("pack.send_username = %s\n", pack.send_username);
+    strcpy(send_pack.username, pack.username);
     strcpy(send_pack.send_username, pack.send_username);
     send_pack.type = RECV_ADDFD;
+    int oo = 0;
     find_fd *ptemp;
     ptemp = phead->next;
     while(ptemp != NULL) {
         if(strcmp(ptemp->name, send_pack.send_username) ==0 ) {
             send_pack.fd = ptemp->fd;
-            printf("send_pack.fd = %d\n", send_pack.fd);
             strcpy(send_pack.username, pack.username);
-            //break;
+            oo++;
         }
         if(strcmp(ptemp->name, pack.username) == 0) {
             send_pack1.fd = ptemp->fd;
-            //break;
+            oo++;
+        }
+        if(oo == 2) {
+            break;
         }
         ptemp = ptemp->next;
     }
     int t = MYSQL_deal_addfd(pack);
     if(t == 0) {
-        send_other_PACK(send_pack);
+        if(ptemp == NULL) {
+            deal_online_mess(send_pack);
+        }
+        else {
+            send_other_PACK(send_pack);
+        }
     } 
     if(t == -1) {
         send_pack1.type = DEAL_ADDFD;
@@ -279,7 +326,7 @@ void deal_recv_addfd(PACK pack)
         if(strcmp(send_pack.send_username, ptemp->name) == 0) {
             if(strcmp(send_pack.mess, "success") == 0) {
                 int t = MYSQL_addfd(pack);
-                if(t != 0) {
+                if(t != -1) {
                     printf("%s %s添加好友成功 写入数据库成功\n", pack.username, pack.send_username);
                 }
             } else {
@@ -292,7 +339,12 @@ void deal_recv_addfd(PACK pack)
         ptemp = ptemp->next;
     }
     send_pack.type = AGREE_ADDFD;
-    send_other_PACK(send_pack);
+    if(ptemp == NULL) {
+        deal_online_mess(send_pack);
+    }
+    else {
+        send_other_PACK(send_pack);
+    }
 }
 
 void deal_del_fd(PACK pack)
@@ -377,19 +429,24 @@ void deal_chat_fd(PACK pack)
     send_pack.type = RECV_CHAT_FD;
     find_fd *ptemp;
     ptemp = phead->next;
+    int oo = 0;;
     while(ptemp != NULL) {
         if(strcmp(ptemp->name, pack.send_username) == 0) {
             send_pack.fd = ptemp->fd;
-           // break;
+            oo++;
         }
         if(strcmp(ptemp->name, pack.username) == 0) {
             send_pack1.fd = ptemp->fd;
-            //break;
+            oo++;
+        }
+        if(oo == 2) {
+            break;
         }
         ptemp = ptemp->next;
     }
-
+    printf("oo = %d\n", oo);
     int t = MYSQL_deal_chat_fd(pack);
+    // 处理屏蔽
     if(t == -3) {
         if(phead1 == NULL) {
             phead1 = (struct Black_fd *)malloc(sizeof(struct Black_fd));
@@ -401,20 +458,26 @@ void deal_chat_fd(PACK pack)
         strcpy(pnew1->username, pack.username);
         strcpy(pnew1->send_username, pack.send_username);
         strcpy(pnew1->mess, pack.mess);
-        printf("@@@@@@@@@pack.mess = %s\n", pack.mess);
+        //printf("@@@@@@@@@pack.mess = %s\n", pack.mess);
         pnew1->next = NULL;
         pend1->next = pnew1; 
         pend1 = pnew1;
     }
     if(t == 2) {
-        send_other_PACK(send_pack);
+        if(ptemp == NULL) {
+            printf("用户%s未上线，消息将存在服务端\n", pack.send_username);
+            deal_online_mess(send_pack);
+        }
+        else {
+            send_other_PACK(send_pack);
+        }
     }
     if(t == 0) { 
         send_pack1.type = DEAL_CHAT_FD;
         strcpy(send_pack1.mess, "fail");
         send_other_PACK(send_pack1);
     }
-    //MYSQL_chat_fd(send_pack);
+    MYSQL_chat_fd(send_pack);
     //send_other_PACK(send_pack);
 }
 
@@ -840,3 +903,4 @@ void deal_send_file(PACK pack)
     pack.type = RECV_FILE;
     send_other_PACK(pack);
 }
+

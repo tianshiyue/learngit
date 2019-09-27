@@ -116,7 +116,6 @@ int client_addfd(int client_fd)
 {
     PACK pack;
     memset(&pack, 0, sizeof(PACK));
-    // 将自己的用户名写进包里
     strcpy(pack.username, name);
     pack.type = ADD_FD;
     printf("\t\t请输入您需要添加的用户名:");
@@ -723,7 +722,7 @@ void *recv_PACK(void *client_fd)
                 agree_addfd(pack);
                 break;
             case RECV_FD_LIST:
-                printf("您的好友列表为:\n");
+                printf("\t\t您的好友列表为:\n");
                 print_fd_list(pack);
                 break;
             case RECV_CHAT_FD:
@@ -764,7 +763,7 @@ void *recv_PACK(void *client_fd)
                 recv_deal_chat_fd(pack);
                 break;
             case RECV_ONLINE_FD_LIST:
-                printf("您的在线好友列表为:\n");
+                printf("\t\t您的在线好友列表为:\n");
                 deal_online_fd_list(pack);
                 break;
             case RECV_UNTALK_GP:
@@ -890,7 +889,7 @@ void print_fd_list(PACK pack)
 {
     int t = strcmp("bye", pack.send_username);
     if(t != 0) {
-        printf("\t%s\n", pack.send_username);
+        printf("\t\t%s\n", pack.send_username);
     }
 }
 
@@ -898,7 +897,7 @@ void deal_online_fd_list(PACK pack)
 {
     int t = strcmp("bye", pack.send_username);
     if(t != 0) {
-        printf("\t%s\n", pack.send_username);
+        printf("\t\t%s\n", pack.send_username);
     }
 }
 

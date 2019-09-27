@@ -196,7 +196,7 @@ void MYSQL_chat_fd(PACK pack)
     accept_mysql();
     char buff[200];
     sprintf(buff, "insert into fd_chatstore (username, send_username, mess) values ('%s', '%s', '%s')", pack.username, pack.send_username, pack.mess);
-    ret = mysql_query(&mysql,buff);
+    //ret = mysql_query(&mysql,buff);
 }
 
 FD_list  MYSQL_fd_list(PACK pack, FD_list fd_list)
