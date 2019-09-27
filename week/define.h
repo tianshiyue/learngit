@@ -70,6 +70,7 @@
 #define IS_BLACK_FD      1025
 #define IS_EXIT_BLACK_FD 1026
 #define IS_DEL_FD        1027
+#define RECV_CHAT_GP1    1028
 
 typedef struct PACK {
     char username[USERNAME_LEN];
@@ -95,6 +96,7 @@ typedef struct FD_chat {
     char username[USERNAME_LEN][USERNAME_LEN];
     char send_username[USERNAME_LEN][USERNAME_LEN];
     char message[100][100];
+    int  oo;
 } FD_chat;
 
 typedef struct QUIT_gp {
@@ -108,6 +110,7 @@ typedef struct chat_GP {
     char groupname[USERNAME_LEN];
     char send_username[50][50];
     char message[50];
+    int  oo;
 } chat_GP;
 
 typedef struct GP_list {
@@ -118,12 +121,14 @@ typedef struct GP_list {
 typedef struct GP_user_list {
     char username[USERNAME_LEN];
     char list[50][50];
+    int  oo;
 } GP_user_list;
 
 typedef struct GP_chatstore {
     char username[USERNAME_LEN][USERNAME_LEN];
     char send_username[USERNAME_LEN][USERNAME_LEN];
     char mess[50][50];
+    int  oo;
 } GP_chatstore;
 
 #endif

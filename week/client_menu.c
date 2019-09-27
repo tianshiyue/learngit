@@ -703,6 +703,7 @@ void deal_is_exit_gp(PACK);
 void deal_is_black_fd(PACK);
 void deal_is_exit_black_fd(PACK);
 void deal_is_del_fd(PACK);
+void deal_recv_chat_gp1(PACK);
 
 void *recv_PACK(void *client_fd)
 {
@@ -744,12 +745,10 @@ void *recv_PACK(void *client_fd)
                 print_chat_gp(pack);
                 break;
             case RECV_GP_LIST:
-                printf("您的群列表为:\n");
+                printf("\t\t您的群列表为:\n");
                 print_gp_list(pack);
                 break;
             case RECV_GP_USER_LIST:
-                printf("\n");
-                printf("群%s的成员有:\n", pack.username);
                 print_gp_user_list(pack);
                 break;
             case RECV_GP_CHATSTORE:
@@ -801,6 +800,10 @@ void *recv_PACK(void *client_fd)
             case IS_DEL_FD:
                 deal_is_del_fd(pack);
                 break;
+            case RECV_CHAT_GP1:
+                deal_recv_chat_gp1(pack);
+                break;
+
         }
     }
 }
@@ -916,6 +919,10 @@ void print_chat_fd(PACK pack)
 void print_fd_chatstore(PACK pack)
 {
     printf("\n");
+    if(strcmp(pack.mess, "fail") == 0) {
+        printf("\t\t您与该用户并不是好友，查看失败\n");
+        return;
+    }
     printf("\t\t发送人:%s  接收人:%s  信息:%s\n", pack.username, pack.send_username, pack.mess);
 }
 
@@ -967,26 +974,31 @@ void deal_fail_chat_gp(PACK pack)
 
 void print_gp_list(PACK pack)
 {
-    printf("\n");
-    int t = strcmp(pack.send_username, "bye");
-    if(t != 0) {
-        printf("\t%s\n", pack.send_username);
-    }
+    //printf("\n");
+    printf("\t\t%s\n", pack.send_username);
 }
 
 void print_gp_user_list(PACK pack)
 {
     printf("\n");
-    int t = strcmp(pack.send_username, "bye");
-    if(t != 0) {
-        printf("\t   %s\n", pack.send_username);
+    if(strcmp("fail", pack.mess) == 0) {
+        printf("\t\t你不是该群成员或该群不存在，查询失败\n");
+    }
+    if(strcmp("success", pack.mess) == 0) {
+        printf("\t\t群%s的成员有:\n", pack.username);
+        printf("\t\t%s", pack.send_username);
+        printf("\n");
     }
 }
 
 void print_gp_chatstore(PACK pack)
 {
     printf("\n");
-    printf("发件人:%s   信息:%s\n", pack.username, pack.mess);
+    if(strcmp(pack.mess, "fail") == 0) {
+        printf("\t\t您不存在于该群，查看失败\n");
+        return;
+    }
+    printf("\t\t发件人:%s   信息:%s\n", pack.username, pack.mess);
 }
 
 void recv_file(PACK pack)
@@ -1085,4 +1097,12 @@ void deal_is_del_fd(PACK pack)
     } else {
         printf("\t\t删除失败 您与该用户并不是好友或者该用户不存在");
     }
+}
+
+void deal_recv_chat_gp1(PACK pack) 
+{
+    printf("\n");
+    if(strcmp(pack.mess, "fail") == 0) {
+        printf("\t\t您不是该群成员， 发送失败\n");
+    } 
 }

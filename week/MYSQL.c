@@ -196,7 +196,6 @@ void MYSQL_chat_fd(PACK pack)
     accept_mysql();
     char buff[200];
     sprintf(buff, "insert into fd_chatstore (username, send_username, mess) values ('%s', '%s', '%s')", pack.username, pack.send_username, pack.mess);
-    //printf("%s\n", buff);
     ret = mysql_query(&mysql,buff);
 }
 
@@ -252,24 +251,41 @@ FD_chat MYSQL_fd_chatstore(PACK pack, FD_chat fd_chat)
     accept_mysql();
     char buff[200];
     int i = 0;
+    fd_chat.oo = 0;
+    mysql_query(&mysql, "select *from friends");
+    result = mysql_store_result(&mysql);
+    if(result) {
+        while(row = mysql_fetch_row(result)) {
+            if(strcmp(pack.username, row[0]) == 0 && strcmp(pack.send_username, row[1]) == 0) {
+                fd_chat.oo += 1;
+            }
+            if(strcmp(pack.username, row[1]) == 0 && strcmp(pack.send_username, row[0]) == 0) {
+                fd_chat.oo += 1;
+            }
+        }
+    }
+    int t = fd_chat.oo;
     mysql_query(&mysql, "select *from fd_chatstore");
     result = mysql_store_result(&mysql);
     memset(&fd_chat, 0, sizeof(FD_chat));
     if(result) {
         while(row = mysql_fetch_row(result)) {
-            //printf("pack.username = %s\n", pack.username);
-            //printf("pack.send_username = %s\n", pack.send_username);
-            if((strcmp(row[0], pack.username) == 0 && strcmp(row[1], pack.send_username) == 0) || (strcmp(row[0], pack.send_username) == 0 && strcmp(row[1], pack.username) == 0)) {
+            if((strcmp(row[0], pack.username) == 0 && strcmp(row[1], pack.send_username) == 0)) {
                 strcpy(fd_chat.username[i], row[0]);
-                //printf("fd_chat.username = %s\n", fd_chat.username[i]);
                 strcpy(fd_chat.send_username[i], row[1]);
-                //printf("fd_chat.send_username = %s\n", fd_chat.send_username[i]);
                 strcpy(fd_chat.message[i], row[2]);
-                //printf("fd_chat.message = %s\n", fd_chat.message[i]);
+                i++;
+            }
+            if(strcmp(row[0], pack.send_username) == 0 && strcmp(row[1], pack.username) == 0) {
+                strcpy(fd_chat.username[i], row[0]);
+                strcpy(fd_chat.send_username[i], row[1]);
+                strcpy(fd_chat.message[i], row[2]);
                 i++;
             }
         }
     }
+    strcpy(fd_chat.send_username[i], "bye");
+    fd_chat.oo = t;
     return fd_chat;
 }
 
@@ -374,6 +390,7 @@ int MYSQL_deal_chat_gp(PACK pack)
     accept_mysql();
     mysql_query(&mysql, "select *from group_member");
     result = mysql_store_result(&mysql);
+    // 处理禁言
     if(result) {
         while(row = mysql_fetch_row(result)) {
             if(strcmp(pack.username, row[1]) == 0 && strcmp(pack.send_username, row[0]) == 0) {
@@ -391,12 +408,11 @@ chat_GP MYSQL_chat_gp(PACK pack, chat_GP chat_gp)
 {
     accept_mysql();
     char buff[200];
-    sprintf(buff, "insert into gp_chatstore (group_name, group_username, mess) values ('%s', '%s', '%s')", pack.send_username, pack.username, pack.mess);
-    ret = mysql_query(&mysql,buff);
     int i = 0;
     mysql_query(&mysql, "select *from group_member");
     result = mysql_store_result(&mysql);
     memset(&chat_gp, 0, sizeof(chat_GP));
+    chat_gp.oo = 0;
     if(result) {
         while(row = mysql_fetch_row(result)) {
             if(strcmp(row[1], pack.username) == 0 && atoi(row[2]) == -1) {
@@ -406,11 +422,18 @@ chat_GP MYSQL_chat_gp(PACK pack, chat_GP chat_gp)
                 printf("chat_gp.send_username[%d] = %s\n", i,  row[1]);
                 strcpy(chat_gp.send_username[i], row[1]);
                 i++;
+                if(strcmp(row[1], pack.username) == 0) {
+                    chat_gp.oo = 2;
+                }
             }
         }
     }
     strcpy(chat_gp.send_username[i++], "bye");
     printf("chat_gp.send_usernamep[%d] = %s\n",i , chat_gp.send_username);
+    if(chat_gp.oo == 2) {
+        sprintf(buff, "insert into gp_chatstore (group_name, group_username, mess) values ('%s', '%s', '%s')", pack.send_username, pack.username, pack.mess);
+        mysql_query(&mysql,buff);
+    }
     return chat_gp;
 }
 
@@ -425,6 +448,7 @@ GP_list MYSQL_gp_list(PACK pack, GP_list gp_list)
         while(row = mysql_fetch_row(result)) {
             if(strcmp(pack.username, row[1]) == 0) {
                 strcpy(gp_list.list[i], row[0]);
+                //printf("gp_list.list[%d] = %s\n", i, gp_list.list[i]);
                 i++;
             }
         }
@@ -440,11 +464,15 @@ GP_user_list MYSQL_gp_user_list(PACK pack, GP_user_list gp_user_list)
     mysql_query(&mysql, "select *from group_member");
     result = mysql_store_result(&mysql);
     memset(&gp_user_list, 0, sizeof(gp_user_list));
+    gp_user_list.oo = -1;
     if(result) {
         while(row = mysql_fetch_row(result)) {
             if(strcmp(row[0], pack.send_username) == 0) {
                 strcpy(gp_user_list.list[i], row[1]);
                 i++;
+                if(strcmp(pack.username, row[1]) == 0) {
+                    gp_user_list.oo = 2;
+                }
             }
         }
     }
@@ -459,22 +487,30 @@ GP_chatstore MYSQL_gp_chatstore(PACK pack, GP_chatstore gp_chatstore)
     int i = 0;
     mysql_query(&mysql, "select *from gp_chatstore");
     result = mysql_store_result(&mysql);
+    if(result) {
+        while(row = mysql_fetch_row(result)) {
+            if(strcmp(pack.send_username, row[0]) == 0) {
+                if(strcmp(pack.username, row[1]) == 0) {
+                    gp_chatstore.oo = 2;
+                }
+            }
+        }
+    }
+    int t = gp_chatstore.oo;
+    mysql_query(&mysql, "select *from gp_chatstore");
+    result = mysql_store_result(&mysql);
     memset(&gp_chatstore, 0, sizeof(GP_chatstore));
     if(result) {
         while(row = mysql_fetch_row(result)) {
-            //printf("pack.username = %s\n", pack.username);
-            //printf("pack.send_username = %s\n", pack.send_username);
             if(strcmp(row[0], pack.send_username) == 0) {
                 strcpy(gp_chatstore.username[i], row[1]);
-                //printf("fd_chat.username = %s\n", fd_chat.username[i]);
-                //strcpy(gp_chatstore.send_username[i], row[1]);
-                //printf("fd_chat.send_username = %s\n", fd_chat.send_username[i]);
                 strcpy(gp_chatstore.mess[i], row[2]);
-                //printf("fd_chat.message = %s\n", fd_chat.message[i]);
                 i++;
             }
         }
     }
+    strcpy(gp_chatstore.username[i], "bye");
+    gp_chatstore.oo = t;
     return gp_chatstore;
 }
 
