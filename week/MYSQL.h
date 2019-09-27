@@ -31,15 +31,15 @@ GP_list MYSQL_gp_list(PACK, GP_list);
 GP_user_list MYSQL_gp_user_list(PACK, GP_user_list);
 GP_chatstore MYSQL_gp_chatstore(PACK, GP_chatstore);
 int MYSQL_untalk_gp(PACK);
-void MYSQL_deal_untalk_gp(PACK);
+int  MYSQL_deal_untalk_gp(PACK);
 int MYSQL_untalk1_gp(PACK);
 void MYSQL_deal1_untalk_gp(PACK);
 int MYSQL_deal_invite_user(PACK);
 void MYSQL_invite_user_isok(PACK);
 int MYSQL_deal_exit_gp(PACK);
 void MYSQL_exit_gp_isok(PACK);
-void MYSQL_black_fd(PACK);
-void MYSQL_exit_black_fd(PACK);
+int MYSQL_black_fd(PACK);
+int MYSQL_exit_black_fd(PACK);
 
 
 #endif

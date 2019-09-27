@@ -1057,7 +1057,7 @@ void deal_is_invite_user(PACK pack)
 void deal_quit1_gp(PACK pack) 
 {
     printf("\n");
-    printf("\t\t群主%s以退出群%s，群%s已解散\n", pack.username, pack.send_username, pack.send_username);
+    printf("\t\t群主%s以退出群%s，群%s已解散\n", pack.username, pack.mess, pack.mess);
 }
 
 void deal_exit_gp(PACK pack)
@@ -1080,12 +1080,21 @@ void deal_is_exit_gp(PACK pack)
 void deal_is_black_fd(PACK pack)
 {
     printf("\n");
-    printf("\t\t拉黑成功\n");
+    if(strcmp(pack.mess, "success") == 0) {
+        printf("\t\t拉黑成功\n");
+    } else {
+        printf("\t\t拉黑失败\n");
+    }
 }
 void deal_is_exit_black_fd(PACK pack)
 {
     printf("\n");
-    printf("\t\t解除成功\n");
+    if(strcmp(pack.mess, "success") == 0) {
+        printf("\t\t解除成功\n");
+    }
+    else {
+        printf("\t\t解除成功\n");
+    }
 }
 
 void deal_is_del_fd(PACK pack)
