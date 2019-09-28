@@ -917,7 +917,7 @@ void deal_exit_black_fd(PACK pack)
 {
     PACK send_pack;
     Black_fd *ptemp1;
-    ptemp1 = phead1->next;
+    ptemp1 = phead1;
     find_fd *ptemp;
     ptemp = phead->next;
     while(ptemp != NULL) {
@@ -928,14 +928,17 @@ void deal_exit_black_fd(PACK pack)
         ptemp = ptemp->next;
     }
     send_pack.type = IS_EXIT_BLACK_FD;
-    send_other_PACK(send_pack);
+    //send_other_PACK(send_pack);
     int t = MYSQL_exit_black_fd(pack);
     if(t == 0) {
+        //printf("%%%%%%%%\n");
         strcpy(send_pack.mess, "fail");
         send_other_PACK(send_pack);
         return;
     }
     strcpy(send_pack.mess, "success");
+    //printf("#############解除屏蔽成功\n");
+    send_other_PACK(send_pack);
     while(ptemp1 != NULL) {
         if(strcmp(ptemp1->username, pack.send_username) == 0 && strcmp(ptemp1->send_username, pack.username) == 0) {
             send_pack.type = RECV_CHAT_FD;

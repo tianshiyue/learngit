@@ -1093,7 +1093,7 @@ void deal_is_exit_black_fd(PACK pack)
         printf("\t\t解除成功\n");
     }
     else {
-        printf("\t\t解除成功\n");
+        printf("\t\t您与该用户并不是好友或您没有屏蔽该好友，解除失败\n");
     }
 }
 
