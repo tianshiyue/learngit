@@ -396,6 +396,7 @@ int client_send_file(int client_fd)
     }
     // read返回每次读取到的字节数
     while((ret = read(fd, pack.mess, sizeof(pack.mess)) < 0)) {
+        pack.oo = ret;
         if((send(client_fd, &pack, sizeof(PACK), 0)) < 0) {
             perror("client_send_file:send\n");
         }
@@ -1008,7 +1009,7 @@ void recv_file(PACK pack)
         perror("recv_file:open\n");
     }
     int ret;
-    if( (ret = write(fd, pack.mess, sizeof(pack.mess))) < 0) {
+    if( (ret = write(fd, pack.mess, sizeof(pack.mess))) < 0 && ret != pack.oo) {
         perror("recv_file:write\n");
     }
     close(fd);

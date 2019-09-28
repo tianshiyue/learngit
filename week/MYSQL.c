@@ -705,7 +705,6 @@ int  MYSQL_exit_black_fd(PACK pack)
     result = mysql_store_result(&mysql);
     while(row = mysql_fetch_row(result)) {
         if(strcmp(pack.username, row[0]) == 0 && strcmp(pack.send_username, row[1]) == 0 && atoi(row[2]) == 0) {
-        printf("^^^^^^^^^^\n");
             flag++;
         }
     }

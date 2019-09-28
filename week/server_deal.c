@@ -200,13 +200,13 @@ void deal_online_mess(PACK pack)
     }
     pnew2 = (online_mess *)malloc(sizeof(online_mess));
     strcpy(pnew2->name1, pack.username);
-    //printf("@@@@%s\n", pnew2->name1);
+    printf("####%s\n", pnew2->name1);
     strcpy(pnew2->name2, pack.send_username);
-    //printf("@@@@%s\n", pnew2->name2);
+    printf("#####%s\n", pnew2->name2);
     strcpy(pnew2->name3, pack.password);
     //printf("@@@@%s\n", pnew2->name3);
     strcpy(pnew2->mess, pack.mess);
-    //printf("@@@@%s\n", pnew2->mess);
+    printf("####%s\n", pnew2->mess);
     pnew2->type = pack.type;
     pnew2->next = NULL;
     pend2->next = pnew2;
@@ -943,7 +943,11 @@ void deal_exit_black_fd(PACK pack)
         if(strcmp(ptemp1->username, pack.send_username) == 0 && strcmp(ptemp1->send_username, pack.username) == 0) {
             send_pack.type = RECV_CHAT_FD;
             strcpy(send_pack.username, ptemp1->username);
+            //printf("@@@@@send_pack.username = %s\n", send_pack.username);
+            strcpy(send_pack.send_username, ptemp1->send_username);
+            //printf("@@@@@send_pack.send_username = %s\n", send_pack.send_username);
             strcpy(send_pack.mess, ptemp1->mess);
+            //printf("@@@@@@send_pack.mess = %s\n", send_pack.mess);
             send_other_PACK(send_pack);
         }
         ptemp1 = ptemp1->next;

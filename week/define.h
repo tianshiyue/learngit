@@ -79,6 +79,7 @@ typedef struct PACK {
     char mess[1000];
     int  type;
     int  fd;
+    int  oo;
 } PACK __attribute__((aligned(1)));
 
 typedef struct PACK_FD_LIST {
