@@ -195,7 +195,7 @@ void MYSQL_chat_fd(PACK pack)
 {
     accept_mysql();
     char buff[200];
-    sprintf(buff, "insert into fd_chatstore (username, send_username, mess) values ('%s', '%s', '%s')", pack.username, pack.send_username, pack.mess);
+    sprintf(buff, "insert into fd_chatstore (username, send_username, mess, time) values ('%s', '%s', '%s', '%s')", pack.username, pack.send_username, pack.mess, pack.password);
     ret = mysql_query(&mysql,buff);
 }
 
@@ -274,12 +274,14 @@ FD_chat MYSQL_fd_chatstore(PACK pack, FD_chat fd_chat)
                 strcpy(fd_chat.username[i], row[0]);
                 strcpy(fd_chat.send_username[i], row[1]);
                 strcpy(fd_chat.message[i], row[2]);
+                strcpy(fd_chat.time[i], row[3]);
                 i++;
             }
             if(strcmp(row[0], pack.send_username) == 0 && strcmp(row[1], pack.username) == 0) {
                 strcpy(fd_chat.username[i], row[0]);
                 strcpy(fd_chat.send_username[i], row[1]);
                 strcpy(fd_chat.message[i], row[2]);
+                strcpy(fd_chat.time[i], row[3]);
                 i++;
             }
         }
@@ -427,7 +429,7 @@ chat_GP MYSQL_chat_gp(PACK pack, chat_GP chat_gp)
     strcpy(chat_gp.send_username[i++], "bye");
    // printf("chat_gp.send_usernamep[%d] = %s\n",i , chat_gp.send_username);
     if(chat_gp.oo == 2) {
-        sprintf(buff, "insert into gp_chatstore (group_name, group_username, mess) values ('%s', '%s', '%s')", pack.send_username, pack.username, pack.mess);
+        sprintf(buff, "insert into gp_chatstore (group_name, group_username, mess, time) values ('%s', '%s', '%s', '%s')", pack.send_username, pack.username, pack.mess, pack.password);
         mysql_query(&mysql,buff);
     }
     return chat_gp;
@@ -501,6 +503,7 @@ GP_chatstore MYSQL_gp_chatstore(PACK pack, GP_chatstore gp_chatstore)
             if(strcmp(row[0], pack.send_username) == 0) {
                 strcpy(gp_chatstore.username[i], row[1]);
                 strcpy(gp_chatstore.mess[i], row[2]);
+                strcpy(gp_chatstore.time[i], row[3]);
                 i++;
             }
         }

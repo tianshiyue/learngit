@@ -178,6 +178,9 @@ int client_chat_fd(int client_fd)
     strcpy(pack.username, name);
     printf("\t\t请输入您需要聊天的好友用户名:");
     scanf("%s", pack.send_username);
+    time_t Time = time(NULL);
+	char *buf = ctime(&Time);
+    strcpy(pack.password, buf);
     if(strcmp(name, pack.send_username) == 0) {
         printf("\t\t对不起，自己不能和自己聊天\n");
         return INITB;
@@ -259,6 +262,9 @@ int client_chat_gp(int client_fd)
     pack.type = CHAT_GP;
     printf("\t\t请输入您要群聊的群名:");
     scanf("%s", pack.send_username);
+    time_t Time = time(NULL);
+	char *buf = ctime(&Time);
+    strcpy(pack.password, buf);
     int t = 1;
     while(t != 0) {
         printf("\t\t请输入您想要聊天的内容:");
@@ -395,8 +401,9 @@ int client_send_file(int client_fd)
         return INITB;
     }
     // read返回每次读取到的字节数
-    while((ret = read(fd, pack.mess, sizeof(pack.mess)) < 0)) {
+    while((ret = read(fd, pack.mess, sizeof(pack.mess)) > 0)) {
         pack.oo = ret;
+        printf("ret = %d\n", ret);
         if((send(client_fd, &pack, sizeof(PACK), 0)) < 0) {
             perror("client_send_file:send\n");
         }
@@ -923,7 +930,7 @@ void print_fd_chatstore(PACK pack)
         printf("\t\t您与该用户并不是好友，查看失败\n");
         return;
     }
-    printf("\t\t发送人:%s  接收人:%s  信息:%s\n", pack.username, pack.send_username, pack.mess);
+    printf("\t\t时间:%s\t\t发送人:%s  接收人:%s  信息:%s\n", pack.password, pack.username, pack.send_username, pack.mess);
 }
 
 void print_creat_gp(PACK pack)
@@ -998,12 +1005,13 @@ void print_gp_chatstore(PACK pack)
         printf("\t\t您不存在于该群，查看失败\n");
         return;
     }
-    printf("\t\t发件人:%s   信息:%s\n", pack.username, pack.mess);
+    printf("\t\t时间:%s\t\t发件人:%s   信息:%s\n",pack.password,  pack.username, pack.mess);
 }
 
 void recv_file(PACK pack)
 {
-    PACK send_pack;
+    //PACK send_pack;
+    printf("\t\t%s给您发来了一份文件，请注意查收\n", pack.username);
     int fd;
     if((fd = open("recv_test", O_RDWR|O_CREAT|O_APPEND, S_IRUSR| S_IWUSR)) == -1) {
         perror("recv_file:open\n");

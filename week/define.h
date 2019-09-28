@@ -9,7 +9,7 @@
 #define _DEFINE_H
 
 #define USERNAME_LEN 20
-#define PASSWORD_LEN 20
+#define PASSWORD_LEN 50
 #define INITA      1111
 #define INITB      2222
 
@@ -97,6 +97,7 @@ typedef struct FD_chat {
     char username[USERNAME_LEN][USERNAME_LEN];
     char send_username[USERNAME_LEN][USERNAME_LEN];
     char message[100][100];
+    char time[100][100];
     int  oo;
 } FD_chat;
 
@@ -129,6 +130,7 @@ typedef struct GP_chatstore {
     char username[USERNAME_LEN][USERNAME_LEN];
     char send_username[USERNAME_LEN][USERNAME_LEN];
     char mess[50][50];
+    char time[100][100];
     int  oo;
 } GP_chatstore;
 

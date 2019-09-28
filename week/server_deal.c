@@ -435,6 +435,7 @@ void deal_chat_fd(PACK pack)
     strcpy(send_pack.username, pack.username);
     strcpy(send_pack.send_username, pack.send_username);
     strcpy(send_pack.mess, pack.mess);
+    strcpy(send_pack.password, pack.password);
     send_pack.type = RECV_CHAT_FD;
     find_fd *ptemp;
     ptemp = phead->next;
@@ -518,6 +519,7 @@ void deal_fd_chatstore(PACK pack)
         strcpy(send_pack.username, fd_chat.username[i]);
         strcpy(send_pack.send_username, fd_chat.send_username[i]);
         strcpy(send_pack.mess, fd_chat.message[i]);
+        strcpy(send_pack.password, fd_chat.time[i]);
         i++;
         send_other_PACK(send_pack);
     }
@@ -632,6 +634,7 @@ void deal_chat_gp(PACK pack)
     strcpy(send_pack.username, pack.username);
     strcpy(send_pack.send_username, pack.send_username);
     strcpy(send_pack.mess, pack.mess);
+    strcpy(send_pack.password, pack.password);
     chat_gp = MYSQL_chat_gp(pack, chat_gp);
     if(chat_gp.oo != 2) {
         PACK send_pack1;
@@ -753,6 +756,7 @@ void deal_gp_chat_store(PACK pack)
         strcpy(send_pack.username, gp_chatstore.username[i]);
         //strcpy(send_pack.send_username, gp_chatstore.send_username[i]);
         strcpy(send_pack.mess, gp_chatstore.mess[i]);
+        strcpy(send_pack.password, gp_chatstore.time[i]);
         i++;
         send_other_PACK(send_pack);
     }
@@ -965,7 +969,14 @@ void deal_send_file(PACK pack)
         }
         ptemp = ptemp->next;
     }
-    pack.type = RECV_FILE;
-    send_other_PACK(pack);
+    if(ptemp == NULL) {
+        return;
+    }
+    int t = strlen(pack.mess);
+    printf("t = %d\n", t);
+    if(t == pack.oo) {
+        pack.type = RECV_FILE;
+        send_other_PACK(pack);
+    }
 }
 
