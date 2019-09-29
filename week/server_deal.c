@@ -973,6 +973,8 @@ void deal_send_file(PACK pack)
         return;
     }
     pack.type = RECV_FILE;
+    //int ret = sizeof(pack.mess);
+    //printf("$$$$$$$$$ret = %d\n", ret);
     send_other_PACK(pack);
 }
 
