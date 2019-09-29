@@ -386,7 +386,7 @@ int client_send_file(int client_fd)
     int fd;
     int ret;
     scanf("%s", path);
-    // lstat获取文件的一些信息
+    // lstat获取文件的信息
     if(lstat(path, &buf) == -1) {
         printf("\t\t输入的文件路径错误\n");
         return INITB;
@@ -401,9 +401,8 @@ int client_send_file(int client_fd)
         return INITB;
     }
     // read返回每次读取到的字节数
-    while((ret = read(fd, pack.mess, sizeof(pack.mess)) > 0)) {
-        pack.oo = ret;
-        printf("ret = %d\n", ret);
+    while((ret = read(fd, pack.mess, sizeof(pack.mess)) )) {
+        printf("\t\tret = %d\n", ret);
         if((send(client_fd, &pack, sizeof(PACK), 0)) < 0) {
             perror("client_send_file:send\n");
         }
@@ -1011,15 +1010,17 @@ void print_gp_chatstore(PACK pack)
 void recv_file(PACK pack)
 {
     //PACK send_pack;
+    printf("\n");
     printf("\t\t%s给您发来了一份文件，请注意查收\n", pack.username);
     int fd;
     if((fd = open("recv_test", O_RDWR|O_CREAT|O_APPEND, S_IRUSR| S_IWUSR)) == -1) {
         perror("recv_file:open\n");
     }
     int ret;
-    if( (ret = write(fd, pack.mess, sizeof(pack.mess))) < 0 && ret != pack.oo) {
+    if( (ret = write(fd, pack.mess, sizeof(pack.mess))) < 0 ) {
         perror("recv_file:write\n");
     }
+    printf("\t\trecv_file:ret = %d\n", ret);
     close(fd);
 }
 

@@ -972,11 +972,7 @@ void deal_send_file(PACK pack)
     if(ptemp == NULL) {
         return;
     }
-    int t = strlen(pack.mess);
-    printf("t = %d\n", t);
-    if(t == pack.oo) {
-        pack.type = RECV_FILE;
-        send_other_PACK(pack);
-    }
+    pack.type = RECV_FILE;
+    send_other_PACK(pack);
 }
 
