@@ -1010,9 +1010,7 @@ void print_gp_chatstore(PACK pack)
 
 void recv_file(PACK pack)
 {
-    //PACK send_pack;
     printf("\n");
-    //printf("\t\t%s给您发来了一份文件，请注意查收\n", pack.username);
     int fd;
     if((fd = open("recv_test", O_RDWR|O_CREAT|O_APPEND, S_IRUSR| S_IWUSR)) == -1) {
         perror("recv_file:open\n");
@@ -1061,7 +1059,6 @@ void deal_is_invite_user(PACK pack)
     }
     if(strcmp("success", pack.password) == 0) {
         printf("\t\t邀请成功\n");
-        //printf("\t\t用户%s已是%s群成员\n", pack.send_username, pack.mess);
     }
 }
 

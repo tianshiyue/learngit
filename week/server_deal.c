@@ -178,8 +178,8 @@ typedef struct find_fd {
 find_fd *phead = NULL, *pend;
 
 typedef struct online_mess {
-    int fd;
-    int type;
+    int  fd;
+    int  type;
     char name1[USERNAME_LEN];
     char name2[USERNAME_LEN];
     char name3[USERNAME_LEN];
@@ -200,13 +200,13 @@ void deal_online_mess(PACK pack)
     }
     pnew2 = (online_mess *)malloc(sizeof(online_mess));
     strcpy(pnew2->name1, pack.username);
-    printf("####%s\n", pnew2->name1);
+    //printf("####%s\n", pnew2->name1);
     strcpy(pnew2->name2, pack.send_username);
-    printf("#####%s\n", pnew2->name2);
+    //printf("#####%s\n", pnew2->name2);
     strcpy(pnew2->name3, pack.password);
     //printf("@@@@%s\n", pnew2->name3);
     strcpy(pnew2->mess, pack.mess);
-    printf("####%s\n", pnew2->mess);
+    //printf("####%s\n", pnew2->mess);
     pnew2->type = pack.type;
     pnew2->next = NULL;
     pend2->next = pnew2;
@@ -973,8 +973,6 @@ void deal_send_file(PACK pack)
         return;
     }
     pack.type = RECV_FILE;
-    //int ret = sizeof(pack.mess);
-    //printf("$$$$$$$$$ret = %d\n", ret);
     send_other_PACK(pack);
 }
 
