@@ -23,7 +23,7 @@ public class Seveneg2 {
                 i++;
             }
             System.out.printf("%.2f%n", sum/i);
-        } catch(InputMismatchException) {
+        } catch(InputMismatchException ) {
             System.out.println("必须输入整数");
         }
     }
